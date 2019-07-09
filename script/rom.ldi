@@ -1,0 +1,143 @@
+OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
+OUTPUT_ARCH(arm)
+ENTRY(_start)
+
+#define AUTO_MODE
+
+MEMORY
+{
+	public : ORIGIN = 0x200040, LENGTH = 1M
+}
+
+SECTIONS
+{
+
+#ifdef AUTO_MODE
+	.text :
+	{
+		start.o (.text)
+		__vectors_start = .;
+		KEEP(*vectors.o(.text*))
+		KEEP(*vectors.o(.rodata*))
+		__vectors_end = .;
+		. = ALIGN(8);
+		*(.rodata*)
+		*(.text*)
+		__iop_code_start_addr__ = .;
+		*(.iop_bin*)
+		__iop_code_end_addr__ = .;
+		__etext = .;
+	} > public
+
+	.data : 
+	{
+		. = ALIGN(8);
+		__data = .;
+		*(.data)
+		. = ALIGN(0x4000);
+		*(.mmu_tables)
+		__edata = .;
+	} > public
+
+	.bss :
+	{
+		__bss_start = .;
+		*(.bss)
+		*(.bss.*)
+		*(.sbss)
+		*(.sbss.*)
+		*(COMMON)
+		. = ALIGN(8);
+		__bss_end__ = .;
+	} > public
+
+#else
+	.text :
+	{
+		start.o (.text)
+		__vectors_start = .;
+		KEEP(*vectors.o(.text*))
+		KEEP(*vectors.o(.rodata*))
+		__vectors_end = .;
+		. = ALIGN(8);
+		*main.o(.text*)
+		*main.o(.rodata*)
+
+		*spiflash.o(.text*)
+		*spiflash.o(.rodata*)
+
+		*noc_*.o(.text*)
+		*noc_*.o(.rodata*)
+		*qch_*.o(.text*)
+		*qch_*.o(.rodata*)
+
+		*diag.o(.text*)
+		*diag.o(.rodata*)
+		*common.o(.text*)
+		*common.o(.rodata*)
+		*sp_interrupt.o(.text*)
+		*sp_interrupt.o(.rodata*)
+		*stc_test.o(.text*)
+                *stc_test.o(.rodata*)
+                *io.o(.text*)
+		*io.o(.rodata*)
+		*timer0_test.o(.text*)
+                *timer0_test.o(.rodata*)
+                *timer1_test.o(.text*)
+                *timer1_test.o(.rodata*)
+                *timer2_test.o(.text*)
+                *timer2_test.o(.rodata*)
+                *timer3_test.o(.text*)
+                *timer3_test.o(.rodata*)
+		*rtc.o(.text*)
+		*rtc.o(.rodata*)
+		*uart.o(.text*)
+		*uart.o(.rodata*)
+		*i2c_master.o(.text*)
+		*i2c_master.o(.rodata*)
+		*i2c_ddc.o(.text*)
+		*i2c_ddc.o(.rodata*)
+		*cbdma.o(.text*)
+		*cbdma.o(.rodata*)
+		*cbdma_sg.o(.text*)
+		*cbdma_sg.o(.rodata*)
+		*pmc.o(.text*)
+		*pmc.o(.rodata*)
+		. = ALIGN(8);
+	} > public
+
+	.av_photo : {
+		. = ALIGN(1024);
+		KEEP(*(.av_photo))
+	} > public
+
+	.mmu_tables : {
+		. = ALIGN(0x4000);
+		*(.mmu_tables)
+	} > sram
+
+	.data :
+	{
+		. = ALIGN(8);
+		*(.data)
+		. = ALIGN(32);
+		__iop_code_start_addr__ = .;
+		*(.iop_bin*)
+		__iop_code_end_addr__ = .;
+	} > sram
+
+	.bss :
+	{
+		__bss_start = .;
+		*(.bss)
+		*(.bss.*)
+		*(.sbss)
+		*(COMMON)
+		. = ALIGN(8);
+		__bss_end__ = .;
+	} > sram
+
+	ucHeap = .;
+	end = .;
+#endif
+}
