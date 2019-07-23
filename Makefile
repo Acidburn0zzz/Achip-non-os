@@ -1,7 +1,7 @@
 COMMON_DIR = common
 LIB = lib
 TESTAPI = testapi
-
+MAKE = make
 CROSS = ../../crossgcc/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
 
 BIN = bin
@@ -69,9 +69,9 @@ OBJS = $(ASOURCES:.S=.o) $(CSOURCES:.c=.o)
 
 .PHONY: clean all
 
-all: clean $(TARGET) pack
-	dd if=../../boot/xboot/bin/xboot.img of=bin/out.bin bs=1k seek=64
-	dd if=bin/rom.img of=bin/out.bin bs=1k seek=256
+all: clean $(TARGET) ISP pack 
+	dd if=bin/rom.img of=bin/out.bin 
+	@cd out && ./isp.sh
 
 $(TARGET): $(OBJS)
 	@$(CROSS)cpp -P $(CFLAGS) $(LD_SRC) $(LD_FILE)
@@ -84,6 +84,13 @@ pack:
 	@echo "Wrap code image..."
 	@bash ./script/add_uhdr.sh uboot $(BIN)/$(TARGET).bin $(BIN)/$(TARGET).img 0x200040 0x200040
 	@sz=`du -sb bin/$(TARGET).img|cut -f1`;	printf "rom size = %d (hex %x)\n" $$sz $$sz
+
+ISP:
+	@echo "isp..."
+	@rm -rf out
+	@mkdir -p out
+	@ln ./isp/isp.sh ./out/isp.sh
+	@$(MAKE) -C ./isp
 
 #testapi/qch/iop.o: testapi/qch/DQ8051.bin
 %.o: %.S
@@ -114,6 +121,7 @@ clean:
 	@-rm -f $(OBJS) >/dev/null
 	@-cd $(BIN); rm -f $(TARGET) $(TARGET).bin $(SPI_ALL).bin $(TARGET).map $(TARGET).dis $(TARGET).img >/dev/null
 	@-rm -f bin/out.bin $(LD_FILE) >/dev/null
+	@-rm -f isp/*.o isp/isp
 
 
 p-%:
