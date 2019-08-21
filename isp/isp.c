@@ -39,7 +39,9 @@
  */
 
 #define _BSD_SOURCE
+#ifndef __MINGW32__
 #include <endian.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,7 +60,11 @@
 #define MESSAGE_OUT  ""
 #else
 #define MESSAGE_OUT_NONE
+#ifndef __MINGW32__
 #define MESSAGE_OUT  " 1> /dev/null 2>&1 "
+#else
+#define MESSAGE_OUT  " 2> nul > nul"
+#endif
 #endif
 
 #define SUPPORT_MAIN_STORAGE_IS_EMMC
@@ -372,7 +378,7 @@ int gen_script_main(char *file_name_isp_script, int nand_or_emmc)
 
 	sprintf(tmp_file, "tmp%08x", (u32)(getpid()));
 
-	fd = fopen(tmp_file, "w");
+	fd = fopen(tmp_file, "wb");
 	if (fd == NULL) {
 		printf("Error: %s: %d\n", __FILE__, __LINE__);
 		return -1;
@@ -1136,7 +1142,7 @@ int pack_image(int argc, char **argv)
 #endif  /* SUPPORT_MAIN_STORAGE_IS_EMMC */
 
 	/* isp_info.file_header.init_script[], it's init script to load ISP's main script */
-	fd = fopen(tmp_file2, "w");
+	fd = fopen(tmp_file2, "wb");
 	fprintf(fd, "if test \"$isp_if\" = usb ; then\n");
 	fprintf(fd, "    echo ISP file from USB storage\n");
 	fprintf(fd, "elif test \"$isp_if\" = mmc ; then\n");
@@ -1327,7 +1333,7 @@ int extract4update(int argc, char **argv, int extract4update_src)
 
 	// Prepare main script for update
 	sprintf(tmp_file, "tmp%08x", (u32)(getpid()));
-	fd2 = fopen(tmp_file, "w");
+	fd2 = fopen(tmp_file, "wb");
 
 	if (extract4update_src == EXTRACT4UPDATE_FROM_STORAGE) {
 		// Do nothing, done in init script:
@@ -1528,7 +1534,7 @@ int extract4update(int argc, char **argv, int extract4update_src)
 	/* file_header.init_script[], it's init script to load ISP's main script */
 	// Because XBoot can't be updated, use it as signature.
 	sprintf(tmp_file, "tmp%08x", (u32)(getpid()));
-	fd2 = fopen(tmp_file, "w");
+	fd2 = fopen(tmp_file, "wb");
 
 	// fprintf(fd2, "echo verifying %s ...\n", basename( file_header.partition_info[0].file_name));
 	// snprintf(cmd, sizeof(cmd), "nand read.bblk $isp_ram_addr %s 0x%x", basename( file_header.partition_info[0].file_name), file_header.partition_info[0].file_size);
@@ -1766,7 +1772,7 @@ int extract4boot2linux(int argc, char **argv,int extrac4boot2linux_src)
 	}
 
 	sprintf(tmp_file, "tmp%08x", (u32)(getpid()));
-	fd2 = fopen(tmp_file, "w");
+	fd2 = fopen(tmp_file, "wb");
 
 	fprintf(fd2, "if test \"$isp_if\" = usb ; then\n");
 	fprintf(fd2, "    echo Boot from USB storage\n");
