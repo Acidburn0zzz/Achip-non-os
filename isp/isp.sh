@@ -3,8 +3,8 @@ TOP=../../..
 
 export PATH=$PATH:$TOP/nonos/Achip-non-os/isp/
 
-cp ../../../boot/xboot/bin/xboot.img ./
-cp ../../../boot/uboot/u-boot.img ./
+cp ../prebuilt/xboot_emmc.img ./xboot.img
+cp ../prebuilt/u-boot_emmc.img ./u-boot.img
 mv ../bin/out.bin uImage
 
 X=xboot.img

@@ -70,6 +70,8 @@ OBJS = $(ASOURCES:.S=.o) $(CSOURCES:.c=.o)
 .PHONY: clean all
 
 all: clean $(TARGET) ISP pack 
+	dd if=prebuilt/xboot_nor.img of=bin/spi_all.bin bs=1k seek=64
+	dd if=bin/rom.img of=bin/spi_all.bin bs=1k seek=256
 	dd if=bin/rom.img of=bin/out.bin 
 	@cd out && ./isp.sh
 

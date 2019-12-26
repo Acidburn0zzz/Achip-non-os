@@ -1071,7 +1071,6 @@ int pack_image(int argc, char **argv)
 				md5sum(isp_info.full_file_name[i], 0, 0, isp_info.file_header.partition_info[i].md5sum);
 
 				isp_info.file_header.partition_info[i].partition_start_addr = next_partition_start_address;
-				printf("\n 222222name=%s  offset = 0x%x\n",isp_info.full_file_name[i],isp_info.full_file_name[i],isp_info.file_header.partition_info[i].partition_start_addr);
 				if (i <= IDX_PARTITION_UBOOT2) { // IDX_PARTITION_XBOOT1, IDX_PARTITION_UBOOT1, IDX_PARTITION_UBOOT2
 					// Don't change next_partition_start_address,
 					// The start address of these partitions are dynamically calculated.
