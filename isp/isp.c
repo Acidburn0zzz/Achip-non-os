@@ -371,7 +371,7 @@ int gen_script_main(char *file_name_isp_script, int nand_or_emmc)
 	FILE *fd;
 	char tmp_file[32], cmd[1024];
 	int i, j, idx_nand_write_bblk, idx;
-	u32 file_size, size, size_programmed, size_verified;
+	u32 file_size,file_offset, size, size_programmed, size_verified;
 	u32 flag_first;
 	char uboot_var_part_sizes[2048];
 	int is_1MB_aligned;
@@ -503,25 +503,10 @@ int gen_script_main(char *file_name_isp_script, int nand_or_emmc)
 
 		fprintf(fd, "echo\n");
 		fprintf(fd, "echo programming %s ...\n", basename( isp_info.file_header.partition_info[i].file_name));
-
-		if (isp_info.file_header.partition_info[i].flags & FLAGS_BCH1K60) {
-			// write kernel data to uboot part  for none-os!!!!!
-			if (strncmp(isp_info.file_header.partition_info[i].file_name,"uboot",strlen("uboot"))==0)
-			{
-				for (k = 0; k < NUM_OF_PARTITION; k++)
-				{
-					if (strcmp(isp_info.file_header.partition_info[k].file_name,"kernel")==0)
-					{
-						fprintf(fd, "fatload $isp_if $isp_dev $isp_ram_addr /%s 0x%x 0x%x\n", basename( isp_info.file_name_pack_image), isp_info.file_header.partition_info[k].file_size,
-							isp_info.file_header.partition_info[k].file_offset);
-					}
-				}
-			}
-			else
-			{
+		//uboot size is larger than 2M, only write xboot here
+		if ((isp_info.file_header.partition_info[i].flags & FLAGS_BCH1K60)&&(i < IDX_PARTITION_UBOOT1)) {
 				fprintf(fd, "fatload $isp_if $isp_dev $isp_ram_addr /%s 0x%x 0x%x\n", basename( isp_info.file_name_pack_image), isp_info.file_header.partition_info[i].file_size,
 					isp_info.file_header.partition_info[i].file_offset);
-			}
 
 #if !defined(REDUCE_MESSAGE)
 			fprintf(fd, "md.b $isp_ram_addr 0x0100\n");
@@ -674,7 +659,25 @@ int gen_script_main(char *file_name_isp_script, int nand_or_emmc)
 				fprintf(fd, "    exit -1\n");
 				fprintf(fd, "fi\n\n");
 			} else if (nand_or_emmc == IDX_EMMC) {
-				file_size = isp_info.file_header.partition_info[i].file_size;
+
+				// write kernel data to uboot part	for none-os!!!!!
+				if (strncmp(isp_info.file_header.partition_info[i].file_name,"uboot",strlen("uboot"))==0)
+				{
+					for (k = 0; k < NUM_OF_PARTITION; k++)
+					{
+						if (strcmp(isp_info.file_header.partition_info[k].file_name,"kernel")==0)
+						{
+							file_size = isp_info.file_header.partition_info[k].file_size;
+							file_offset = isp_info.file_header.partition_info[k].file_offset;
+						}
+					}
+				}
+				else
+				{
+					file_size = isp_info.file_header.partition_info[i].file_size;
+					file_offset = isp_info.file_header.partition_info[i].file_offset;
+				}
+			
 				size_programmed = 0;
 				if (file_size == 0) {
 					// fprintf(fd, "ispsp set_emmc_blk %s 0x%x\n", basename( isp_info.file_header.partition_info[i].file_name), BYTE2BLOCK(size_programmed));
@@ -688,7 +691,7 @@ int gen_script_main(char *file_name_isp_script, int nand_or_emmc)
 				while (file_size) {
 					size = (file_size > MAX_MEM_SIZE_FOR_ISP) ? MAX_MEM_SIZE_FOR_ISP : file_size;
 					fprintf(fd, "fatload $isp_if $isp_dev $isp_ram_addr /%s 0x%x 0x%x\n", basename( isp_info.file_name_pack_image), size,
-						(size_programmed + (isp_info.file_header.partition_info[i].file_offset)));
+						(size_programmed + file_offset));
 
 #if !defined(REDUCE_MESSAGE)
 					fprintf(fd, "md.b $isp_ram_addr 0x0100\n");
@@ -1068,6 +1071,7 @@ int pack_image(int argc, char **argv)
 				md5sum(isp_info.full_file_name[i], 0, 0, isp_info.file_header.partition_info[i].md5sum);
 
 				isp_info.file_header.partition_info[i].partition_start_addr = next_partition_start_address;
+				printf("\n 222222name=%s  offset = 0x%x\n",isp_info.full_file_name[i],isp_info.full_file_name[i],isp_info.file_header.partition_info[i].partition_start_addr);
 				if (i <= IDX_PARTITION_UBOOT2) { // IDX_PARTITION_XBOOT1, IDX_PARTITION_UBOOT1, IDX_PARTITION_UBOOT2
 					// Don't change next_partition_start_address,
 					// The start address of these partitions are dynamically calculated.

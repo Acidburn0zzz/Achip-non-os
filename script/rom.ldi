@@ -6,7 +6,7 @@ ENTRY(_start)
 
 MEMORY
 {
-	public : ORIGIN = 0x200040, LENGTH = 1M
+	public : ORIGIN = 0x200040, LENGTH = 32M
 }
 
 SECTIONS
