@@ -9,5 +9,9 @@
 #define REG_BASE_A				0x9ec00000
 #define RF_GRP_A(_grp, _reg) ((((_grp) * 32 + (_reg)) * 4) + REG_BASE_A)
 
+#define RF_MASK_V(_mask, _val)       (((_mask) << 16) | (_val))
+#define RF_MASK_V_SET(_mask)         (((_mask) << 16) | (_mask))
+#define RF_MASK_V_CLR(_mask)         (((_mask) << 16) | 0)
+
 //FIXME
 //#define PLATFORM_3502  // enable to build 3502-compatible version

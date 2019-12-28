@@ -718,9 +718,9 @@ struct cbdma_regs {
 #define CBDMA1_REG      ((volatile struct cbdma_regs *)RF_GRP(27, 0))
 
 
-#define RF_MASK_V(_mask, _val)       (((_mask) << 16) | (_val))
-#define RF_MASK_V_SET(_mask)         (((_mask) << 16) | (_mask))
-#define RF_MASK_V_CLR(_mask)         (((_mask) << 16) | 0)
+//#define RF_MASK_V(_mask, _val)       (((_mask) << 16) | (_val))
+//#define RF_MASK_V_SET(_mask)         (((_mask) << 16) | (_mask))
+//#define RF_MASK_V_CLR(_mask)         (((_mask) << 16) | 0)
 
 
 #endif /* __INC_REGMAP_Q628_H */

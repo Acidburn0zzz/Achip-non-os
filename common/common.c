@@ -61,3 +61,16 @@ int strlen(const char * str)
 	while (*str) str++;
 	return str - start;
 }
+
+int strncmp(const char * cs,const char * ct,int count)
+{
+	unsigned char __res = 0;
+
+	while (count) {
+		if ((__res = *cs - *ct++) != 0 || !*cs++)
+			break;
+		count--;
+	}
+
+	return __res;
+}

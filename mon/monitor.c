@@ -264,6 +264,208 @@ void _axi(int argc, char *argv[])
 }
 #endif
 
+#ifdef DISP_TEST
+extern void run_disp_init_cmd(int is_hdmi, int width, int height);
+extern void run_colorbar_cmd(int sel, int en);
+extern void run_fetch_data_cmd(int disp_path, int input_fmt);
+static void _disp(int argc, char *argv[])
+{
+	char *cmd, *para1, *para2, *para3;
+	unsigned int cmd_len, para1_len, para2_len, para3_len;
+	unsigned int value, value1, value2, value3;
+
+	cmd_len = 0;
+	para1_len = 0;
+	para2_len = 0;
+	para3_len = 0;
+	value = 0;
+	value1 = 0;
+	value2 = 0;
+	value3 = 0;
+
+	if (argc >= 1) {
+		cmd = argv[0];
+		para1 = argv[1];
+		para2 = argv[2];
+		para3 = argv[3];
+		cmd_len = _strlen(cmd);
+		para1_len = _strlen(para1);
+		para2_len = _strlen(para2);
+		para3_len = _strlen(para3);
+		mon_readhex(argv[0], &value);
+		mon_readhex(argv[1], &value1);
+		mon_readhex(argv[2], &value2);
+		mon_readhex(argv[3], &value3);
+		printf("/********************************************************/ \n");
+		printf("/* disp command list                                    */ \n");
+		printf("/* disp init ttl xx xx --- initial display function.    */ \n");
+		printf("/* disp init hdmi xx xx --- initial display function.   */ \n");
+		printf("/* disp color --- Bulit-In-Self-Test.                   */ \n");
+		printf("/* disp color dve   xx (xx=dis/en).                     */ \n");
+		printf("/* disp color dmix  xx (xx=dis/en/hor/bor/snow).        */ \n");
+		printf("/* disp color vpp0  xx (xx=dis/en).                     */ \n");
+		printf("/* disp color ddfch xx (xx=dis/en/half1/half2).         */ \n");
+		printf("/* disp color osd0  xx (xx=dis/en/bor).                 */ \n");
+		printf("/* disp color hdmitx xx (xx=dis/en).                    */ \n");
+		printf("/* disp fetch ddfch xx (xx=en/nv12/nv16/yuy2).          */ \n");
+		printf("/********************************************************/ \n");
+	}
+	else {
+		printf("help\n");
+		printf("cmd %d, para1 %d, para2 %d , para3 %d \n",cmd_len,para1_len,para2_len,para3_len);
+		printf("cmd %d, para1 %d, para2 %d , para3 %d \n",value,value1,value2,value3);		
+	}
+
+	if (_strncmp(cmd, "init", cmd_len) == 0) {
+		//printf("run init command.\n");
+
+		if (_strncmp(para1, "ttl", para1_len) == 0) {
+			printf("run init ttl command.\n");
+			value1 = 0;
+		}
+		else if (_strncmp(para1, "hdmi", para1_len) == 0) {
+			printf("run init hdmi command.\n");
+			value1 = 1;
+		}
+		if((value2 < 0) || (value2 > 2000))
+			value2 = 720;
+		if((value3 < 0) || (value3 > 2000))
+			value2 = 480;
+		run_disp_init_cmd(value1, value2, value3);
+
+	} else if (_strncmp(cmd, "color", cmd_len) == 0) {
+		//printf("run color bar command.\n");
+		if (_strncmp(para1, "dve", para1_len) == 0) {
+			//printf("run dve color bar command.\n");
+			value1 = 0;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run dve color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run dve color bar [dis].\n");
+			}
+		}
+		else if (_strncmp(para1, "dmix", para1_len) == 0) {
+			//printf("run dmix color bar command.\n");
+			value1 = 1;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run dmix color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run dmix color bar [dis].\n");
+			}
+			else if (_strncmp(para2, "hor", para2_len) == 0) {
+				value2 = 2;
+				printf("run dmix color bar [hor].\n");
+			}
+			else if (_strncmp(para2, "bor", para2_len) == 0) {
+				value2 = 3;
+				printf("run dmix color bar [bor].\n");
+			}
+			else if (_strncmp(para2, "snow", para2_len) == 0) {
+				value2 = 4;
+				printf("run dmix color bar [snow].\n");
+			}
+		}
+		else if (_strncmp(para1, "vpp0", para1_len) == 0) {
+			//printf("run vpp0 color bar command.\n");
+			value1 = 2;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run vpp0 color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run vpp0 color bar [dis].\n");
+			}
+		}
+		else if (_strncmp(para1, "ddfch", para1_len) == 0) {
+			//printf("run ddfch color bar command.\n");
+			value1 = 3;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run ddfch color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run ddfch color bar [dis].\n");
+			}
+			else if (_strncmp(para2, "half1", para2_len) == 0) {
+				value2 = 2;
+				printf("run ddfch color bar [half1].\n");
+			}
+			else if (_strncmp(para2, "half2", para2_len) == 0) {
+				value2 = 3;
+				printf("run ddfch color bar [half2].\n");
+			}
+		}
+		else if (_strncmp(para1, "osd0", para1_len) == 0) {
+			//printf("run osd0 color bar command.\n");
+			value1 = 4;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run osd0 color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run osd0 color bar [dis].\n");
+			}
+			else if (_strncmp(para2, "bor", para2_len) == 0) {
+				value2 = 2;
+				printf("run osd0 color bar [bor].\n");
+			}
+		}
+		else if (_strncmp(para1, "hdmitx", para1_len) == 0) {
+			//printf("run hdmitx color bar command.\n");
+			value1 = 5;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run hdmitx color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run hdmitx color bar [dis].\n");
+			}
+		}
+		run_colorbar_cmd(value1,value2);
+	} else if (_strncmp(cmd, "fetch", cmd_len) == 0) {
+		printf("run fetch command.\n");
+		if (_strncmp(para1, "ddfch", para1_len) == 0) {
+			//printf("run fetch ddfch command.\n");
+			value1 = 0;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 2;
+				printf("run fetch ddfch [en].\n");
+			}			
+			else if (_strncmp(para2, "nv12", para2_len) == 0) {
+				value2 = 0;
+				printf("run fetch ddfch [nv12].\n");
+			}
+			else if (_strncmp(para2, "nv16", para2_len) == 0) {
+				value2 = 1;
+				printf("run fetch ddfch [nv16].\n");
+			}
+			else if (_strncmp(para2, "yuy2", para2_len) == 0) {
+				value2 = 2;
+				printf("run fetch ddfch [yuy2].\n");
+			}
+		}
+		else if (_strncmp(para1, "osd0", para1_len) == 0) {
+			//printf("run fetch osd0 command.\n");
+		}
+		run_fetch_data_cmd(value1,value2);
+	} else {
+		printf("Unknown command.\n");
+	}
+
+	//printf("disp function test \n");
+}
+#endif
+
 static CMD_LIST cmd_list[] =
 {
 	{"lreg",      _lreg,                "Read Register."},
@@ -282,7 +484,9 @@ static CMD_LIST cmd_list[] =
 #ifdef QCH_TEST
 	{"qch",       _qchannel,            "q channel verification."},
 #endif
-
+#ifdef DISP_TEST
+	{"disp",       _disp,                 "For display function"},
+#endif
 };
 
 

@@ -40,6 +40,13 @@ CSOURCES += mon/monitor.c
 CSOURCES += $(TESTAPI)/interrupt/sp_interrupt.c
 ASOURCES += $(TESTAPI)/interrupt/vectors.S
 
+# DISP_TEST = ENABLE
+ifeq "$(DISP_TEST)" "ENABLE"
+	CFLAGS += -DDISP_TEST
+	# disp test
+	DISP_PATH = $(TESTAPI)/drivers/disp
+	CSOURCES += $(wildcard $(DISP_PATH)/*.c)
+endif
 
 # NOC_TEST = ENABLE
 ifeq "$(NOC_TEST)" "ENABLE"

@@ -6,6 +6,10 @@
 #include "common_all.h"
 #include "cache.h"
 
+#ifdef DISP_TEST
+extern void disp_initial_settings();
+#endif
+
 #ifdef NOC_TEST
 // #include "display_pattern_384x240_nv12.inc"
 extern void noc_initial_settings();
@@ -82,6 +86,9 @@ int main(void)
 	mmu_init();
 	HAL_DCACHE_ENABLE();
 
+#ifdef DISP_TEST
+	//disp_initial_settings();
+#endif
 
 #ifdef NOC_TEST
 	noc_initial_settings();
