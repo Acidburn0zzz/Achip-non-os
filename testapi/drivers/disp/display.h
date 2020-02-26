@@ -15,5 +15,16 @@
 #define DDFCH_FETCH_EN
 //#define OSD0_FETCH_EN
 
+#ifdef OSD0_FETCH_EN
+	#define OSD0_FETCH_DATA_8bpp
+	#define OSD0_FETCH_DATA_YUY2
+	//#define OSD0_FETCH_DATA_RGB565
+	//#define OSD0_FETCH_DATA_ARGB1555
+	//#define OSD0_FETCH_DATA_RGBA4444
+	//#define OSD0_FETCH_DATA_ARGB4444
+	//#define OSD0_FETCH_DATA_RGBA8888
+	#define OSD0_FETCH_DATA_ARGB8888
+#endif
+
 #endif	//__DISPLAY_H__
 

@@ -38,7 +38,8 @@ void run_fetch_data_cmd(int disp_path, int input_fmt);
 #include "vpp_pattern/yuv422_YUY2_720x480.h"
 #endif
 #ifdef OSD0_FETCH_EN
-//#include "vpp_pattern/tmp1_yuy2.h"
+//#include "osd_pattern/yuv422_YUY2_800x480.h"
+//#include "osd_pattern/yuv422_YUY2_720x480.h"
 #endif
 
 #ifdef DDFCH_FETCH_EN
@@ -222,7 +223,7 @@ void run_disp_init_cmd(int is_hdmi, int width, int height)
 	ddfch_setting(0x00120000, 0x00120000 + DISP_ALIGN(width, 128)*height, width, height, 0);
     #endif
 
-    DRV_OSD_Set_UI_Init(width, height, DRV_OSD_REGION_FORMAT_ARGB_8888);
+    //DRV_OSD_Set_UI_Init(width, height, DRV_OSD_REGION_FORMAT_ARGB_8888);
 
     disp_set_output_resolution(is_hdmi, width, height);
 
@@ -240,7 +241,7 @@ void run_disp_init_cmd(int is_hdmi, int width, int height)
     #endif
 
     #ifdef OSD0_FETCH_EN
-
+		//osd0_data_addr_list();
 
     #endif
 
@@ -358,8 +359,10 @@ void run_fetch_data_cmd(int disp_path, int input_fmt)
         printf("fetch oad0 data.\n");
         #ifdef OSD0_FETCH_EN
         DRV_DVE_SetColorbar(0); //disable dve
-        DRV_DMIX_Layer_Set(DRV_DMIX_Opacity, DRV_DMIX_VPP0); //show vpp0 layer
-        DRV_DMIX_Layer_Set(DRV_DMIX_Opacity, DRV_DMIX_OSD0); //show osd0 layer,vpp0 layer will be hidden
+        //DRV_DMIX_Layer_Set(DRV_DMIX_Opacity, DRV_DMIX_VPP0); //show vpp0 layer
+        //DRV_DMIX_Layer_Set(DRV_DMIX_Opacity, DRV_DMIX_OSD0); //show osd0 layer,vpp0 layer will be hidden
+        DRV_DMIX_Layer_Set(DRV_DMIX_AlphaBlend, DRV_DMIX_VPP0); //show vpp0 layer
+        DRV_DMIX_Layer_Set(DRV_DMIX_AlphaBlend, DRV_DMIX_OSD0); //show osd0 layer
         G196_OSD0_REG->osd_bist_ctrl = 0; //disable OSD0 bist
         fetch_osd0_path(input_fmt);
         #else
@@ -424,6 +427,114 @@ void fetch_ddfch_path(int input_fmt)
 #ifdef OSD0_FETCH_EN
 void fetch_osd0_path(int input_fmt)
 {
-    ; //TBD
+    if ((disp_init_width!=0) && (disp_init_height!=0)) {
+        if (input_fmt == 2) {
+            printf("fetch_osd0_path [8bpp].\n");
+            if ((disp_init_width==320) && (disp_init_height==240))
+                ; 
+            else if ((disp_init_width==720) && (disp_init_height==480))
+                osd0_setting_hdmi(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_8BPP);
+            else if ((disp_init_width==800) && (disp_init_height==480))
+                osd0_setting(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_8BPP); 
+            else if ((disp_init_width==1024) && (disp_init_height==600))
+                ; 
+            else if ((disp_init_width==1280) && (disp_init_height==720))
+                ; 
+        }
+        else if (input_fmt == 4) {
+            printf("fetch_osd0_path [YUY2].\n");
+            if ((disp_init_width==320) && (disp_init_height==240))
+                ; 
+            else if ((disp_init_width==720) && (disp_init_height==480))
+                osd0_setting_hdmi(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_YUY2); 
+            else if ((disp_init_width==800) && (disp_init_height==480))
+                osd0_setting(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_YUY2); 
+            else if ((disp_init_width==1024) && (disp_init_height==600))
+                ; 
+            else if ((disp_init_width==1280) && (disp_init_height==720))
+                ; 
+        }
+        else if (input_fmt == 8) {
+            printf("fetch_osd0_path [RGB565].\n");
+            if ((disp_init_width==320) && (disp_init_height==240))
+                ; 
+            else if ((disp_init_width==720) && (disp_init_height==480))
+                osd0_setting_hdmi(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_RGB_565); 
+            else if ((disp_init_width==800) && (disp_init_height==480))
+                osd0_setting(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_RGB_565); 
+            else if ((disp_init_width==1024) && (disp_init_height==600))
+                ; 
+            else if ((disp_init_width==1280) && (disp_init_height==720))
+                ; 
+        }
+        else if (input_fmt == 9) {
+            printf("fetch_osd0_path [ARGB1555].\n");
+            if ((disp_init_width==320) && (disp_init_height==240))
+                ; 
+            else if ((disp_init_width==720) && (disp_init_height==480))
+                osd0_setting_hdmi(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_ARGB_1555); 
+            else if ((disp_init_width==800) && (disp_init_height==480))
+                osd0_setting(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_ARGB_1555); 
+            else if ((disp_init_width==1024) && (disp_init_height==600))
+                ; 
+            else if ((disp_init_width==1280) && (disp_init_height==720))
+                ; 
+        }
+        else if (input_fmt == 10) {
+            printf("fetch_osd0_path [RGBA4444].\n");
+            if ((disp_init_width==320) && (disp_init_height==240))
+                ; 
+            else if ((disp_init_width==720) && (disp_init_height==480))
+                osd0_setting_hdmi(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_RGBA_4444); 
+            else if ((disp_init_width==800) && (disp_init_height==480))
+                osd0_setting(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_RGBA_4444); 
+            else if ((disp_init_width==1024) && (disp_init_height==600))
+                ; 
+            else if ((disp_init_width==1280) && (disp_init_height==720))
+                ; 
+        }
+        else if (input_fmt == 11) {
+            printf("fetch_osd0_path [ARGB4444].\n");
+            if ((disp_init_width==320) && (disp_init_height==240))
+                ; 
+            else if ((disp_init_width==720) && (disp_init_height==480))
+                osd0_setting_hdmi(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_ARGB_4444);
+            else if ((disp_init_width==800) && (disp_init_height==480))
+                osd0_setting(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_ARGB_4444); 
+            else if ((disp_init_width==1024) && (disp_init_height==600))
+                ; 
+            else if ((disp_init_width==1280) && (disp_init_height==720))
+                ; 
+        }
+        else if (input_fmt == 13) {
+            printf("fetch_osd0_path [RGBA8888].\n");
+            if ((disp_init_width==320) && (disp_init_height==240))
+                ; 
+            else if ((disp_init_width==720) && (disp_init_height==480))
+                osd0_setting_hdmi(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_RGBA_8888); 
+            else if ((disp_init_width==800) && (disp_init_height==480))
+                osd0_setting(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_RGBA_8888); 
+            else if ((disp_init_width==1024) && (disp_init_height==600))
+                ; 
+            else if ((disp_init_width==1280) && (disp_init_height==720))
+                ; 
+        }
+        else if (input_fmt == 14) {
+            printf("fetch_osd0_path [ARGB8888].\n");
+            if ((disp_init_width==320) && (disp_init_height==240))
+                ; 
+            else if ((disp_init_width==720) && (disp_init_height==480))
+                osd0_setting_hdmi(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_ARGB_8888); 
+            else if ((disp_init_width==800) && (disp_init_height==480))
+                osd0_setting(disp_init_width, disp_init_height, DRV_OSD_REGION_FORMAT_ARGB_8888); 
+            else if ((disp_init_width==1024) && (disp_init_height==600))
+                ; 
+            else if ((disp_init_width==1280) && (disp_init_height==720))
+                ; 
+        }
+        else {
+            printf("fetch_osd0_path [undefined].\n");
+        }
+    }
 }
 #endif

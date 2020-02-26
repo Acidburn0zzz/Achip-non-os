@@ -308,6 +308,7 @@ static void _disp(int argc, char *argv[])
 		printf("/* disp color osd0  xx (xx=dis/en/bor).                 */ \n");
 		printf("/* disp color hdmitx xx (xx=dis/en).                    */ \n");
 		printf("/* disp fetch ddfch xx (xx=en/nv12/nv16/yuy2).          */ \n");
+		printf("/* disp fetch osd0 xx (xx=en/8bpp/yuy2/argb8888).       */ \n");
 		printf("/********************************************************/ \n");
 	}
 	else {
@@ -456,6 +457,43 @@ static void _disp(int argc, char *argv[])
 		}
 		else if (_strncmp(para1, "osd0", para1_len) == 0) {
 			//printf("run fetch osd0 command.\n");
+			value1 = 1;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 4;
+				printf("run fetch osd0 [en].\n");
+			}			
+			else if (_strncmp(para2, "8bpp", para2_len) == 0) {
+				value2 = 2;
+				printf("run fetch osd0 [8bpp].\n");
+			}
+			else if (_strncmp(para2, "yuy2", para2_len) == 0) {
+				value2 = 4;
+				printf("run fetch osd0 [yuy2].\n");
+			}
+			else if (_strncmp(para2, "rgb565", para2_len) == 0) {
+				value2 = 8;
+				printf("run fetch osd0 [rgb565].\n");
+			}
+			else if (_strncmp(para2, "argb1555", para2_len) == 0) {
+				value2 = 9;
+				printf("run fetch osd0 [argb1555].\n");
+			}
+			else if (_strncmp(para2, "rgba4444", para2_len) == 0) {
+				value2 = 10;
+				printf("run fetch osd0 [rgba4444].\n");
+			}
+			else if (_strncmp(para2, "argb4444", para2_len) == 0) {
+				value2 = 11;
+				printf("run fetch osd0 [argb4444].\n");
+			}
+			else if (_strncmp(para2, "rgba8888", para2_len) == 0) {
+				value2 = 13;
+				printf("run fetch osd0 [rgba8888].\n");
+			}
+			else if (_strncmp(para2, "argb8888", para2_len) == 0) {
+				value2 = 14;
+				printf("run fetch osd0 [argb8888].\n");
+			}
 		}
 		run_fetch_data_cmd(value1,value2);
 	} else {

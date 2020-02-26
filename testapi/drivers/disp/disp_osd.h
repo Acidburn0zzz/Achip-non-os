@@ -50,6 +50,9 @@ typedef struct _DRV_Region_Info_t
 
 void DRV_OSD_Init();
 void DRV_OSD_Set_UI_Init(int w,int h, enum DRV_OsdRegionFormat_e fmt);
+void osd0_setting(int w, int h, int input_fmt);
+void osd0_setting_hdmi(int w, int h, int input_fmt);
+void osd0_data_addr_list(void);
 
 #endif	//__DISP_OSD_H__
 

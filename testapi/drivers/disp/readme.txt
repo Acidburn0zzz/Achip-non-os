@@ -20,12 +20,18 @@ Create display test command.
 	disp init ttl 800 480 	; init 800x480 TTL pannel
 	disp init hdmi 720 480 	; init 720x480 HDMI Monitor
 
-	disp color dve en		; enable dve color bar
+	disp color dve en			; enable dve color bar
 	disp color dmix en		; enable dmix color bar
 	disp color vpp0 en		; enable vpp0 color bar
 	disp color ddfch en		; enable ddfch color bar
 	disp color osd0 en		; enable osd0 color bar
 	disp color hdmitx en	; enable hdmitx color bar
 
-	disp fetch ddfch en		; enable vpp0 path fetch data
-	disp fetch osd0 en		; TBD
+	disp fetch ddfch en			; enable vpp0 path fetch data
+	disp fetch ddfch yuy2		; enable vpp0 path fetch data with fmt yuy2
+	
+	disp fetch osd0 en					; enable osd0 path fetch data
+	disp fetch osd0 8bpp				; enable osd0 path fetch data with fmt 8bpp
+	disp fetch osd0 yuy2				; enable osd0 path fetch data with fmt yuy2
+	disp fetch osd0 argb8888		; enable osd0 path fetch data with fmt argb8888
+	
