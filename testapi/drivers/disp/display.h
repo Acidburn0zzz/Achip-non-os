@@ -13,7 +13,7 @@
 
 //#define FETCH_OFF
 #define DDFCH_FETCH_EN
-//#define OSD0_FETCH_EN
+#define OSD0_FETCH_EN
 
 #ifdef OSD0_FETCH_EN
 	#define OSD0_FETCH_DATA_8bpp
