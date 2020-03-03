@@ -504,6 +504,24 @@ static void _disp(int argc, char *argv[])
 }
 #endif
 
+#ifdef RS485_TEST
+void _RS485(int argc, char *argv[])
+{
+	char *cmd;
+	unsigned int value, timeout_cnt = 1;
+	int i, test_id = -1; // -1 means all
+
+	if (argc >= 1) {
+		cmd = argv[0];
+		UA2_printf("%s \n", cmd);
+        UA2_printf("RS485 OK!\n");
+	}
+	else {
+		printf("Unknown command.\n");
+	}		
+}
+#endif
+
 static CMD_LIST cmd_list[] =
 {
 	{"lreg",      _lreg,                "Read Register."},
@@ -525,6 +543,9 @@ static CMD_LIST cmd_list[] =
 #ifdef DISP_TEST
 	{"disp",       _disp,                 "For display function"},
 #endif
+#ifdef RS485_TEST
+	{"rs485",       _RS485,            "RS485 test."}
+#endif 
 };
 
 

@@ -48,6 +48,11 @@ struct moon5_regs {
 };
 #define MOON5_REG ((volatile struct moon5_regs *)RF_GRP(5, 0))
 
+struct gpioxt6_regs {
+	unsigned int sft_cfg[32];
+};
+#define GPIOXT6_REG ((volatile struct gpioxt6_regs *)RF_GRP(6, 0))
+
 struct pad_ctl_regs {
         unsigned int reserved[20];         // 101.0
         unsigned int spi_flash_sftpad_ctl; // 101.20
@@ -718,9 +723,9 @@ struct cbdma_regs {
 #define CBDMA1_REG      ((volatile struct cbdma_regs *)RF_GRP(27, 0))
 
 
-//#define RF_MASK_V(_mask, _val)       (((_mask) << 16) | (_val))
-//#define RF_MASK_V_SET(_mask)         (((_mask) << 16) | (_mask))
-//#define RF_MASK_V_CLR(_mask)         (((_mask) << 16) | 0)
+#define RF_MASK_V(_mask, _val)       (((_mask) << 16) | (_val))
+#define RF_MASK_V_SET(_mask)         (((_mask) << 16) | (_mask))
+#define RF_MASK_V_CLR(_mask)         (((_mask) << 16) | 0)
 
 
 #endif /* __INC_REGMAP_Q628_H */
