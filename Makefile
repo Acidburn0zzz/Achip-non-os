@@ -80,6 +80,14 @@ ifeq "$(AXI_MON)" "ENABLE"
 	CSOURCES += $(wildcard $(TEST_AXI_MON)/*.c)
 endif
 
+#RS485_TEST = ENABLE
+ifeq "$(RS485_TEST)" "ENABLE"
+	CFLAGS += -DRS485_TEST
+	# rs485 test
+	RS485_PATH = drivers/rs485
+	CSOURCES += $(wildcard $(RS485_PATH)/*.c)
+endif
+
 OBJS = $(ASOURCES:.S=.o) $(CSOURCES:.c=.o)
 
 

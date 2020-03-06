@@ -55,22 +55,7 @@ void gpio_intr_test_init()
 }
 #endif
 
-#ifdef RS485_TEST
-void rs485_init(int TX_pin, int RX_pin, int Gpio_pin)
-{
-    
-	/* uart2 pinmux : x3,UA2_TX, X4,UA2_RX */
-	TX_pin -= 7;
-	RX_pin -= 7;
-	MOON3_REG->sft_cfg[16] = RF_MASK_V((0x7f << 0), (TX_pin << 0));
-	MOON3_REG->sft_cfg[16] = RF_MASK_V((0x7f << 8), (RX_pin << 8));
-	MOON0_REG->reset[1] = RF_MASK_V_CLR(1 << 10); /* release UA2 */
-	UART2_REG->div_l = UART_BAUD_DIV_L(BAUDRATE, UART_SRC_CLK);
-	UART2_REG->div_h = UART_BAUD_DIV_H(BAUDRATE, UART_SRC_CLK);
-	GP6_REG->sft_cfg[8] = RF_MASK_V((0x7f << 0), (1 << Gpio_pin)); 
-	DE_RE(1,Gpio_pin);	
-}
-#endif 
+
 
 
 void hw_init()
@@ -129,7 +114,7 @@ int main(void)
 #endif
 
 #ifdef RS485_TEST
-	rs485_init(10,11,0);	//G_MX[10]_TX --> DI, G_MX[11]_RX --> RO, Gpio_num --> DE_RE 
+	rs485_init(10,11);	//G_MX[10]_TX --> DI, G_MX[11]_RX --> RO 
 #endif 
 
 #ifdef I2C_TEST
