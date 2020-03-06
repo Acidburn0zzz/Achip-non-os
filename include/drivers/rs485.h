@@ -39,6 +39,16 @@
 #define UA2_printf(s...) \
 		do { psprintf(linebuf, ## s); UART2_puts(linebuf); } while (0)
 
+// GPIO_0
+#define GP6_REG             GPIOXT6_REG
+#define DE_RE_Low(gpio) 	(GP6_REG->sft_cfg[16] = (((0x00010000)<<(gpio)) | ((0)<<(gpio))))
+#define DE_RE_High(gpio)    (GP6_REG->sft_cfg[16] = (((0x00010000)<<(gpio)) | ((1)<<(gpio))))		
+
+
+extern void rs485_init(int TX_pin, int RX_pin);
+extern void _RS485_write(int argc, char *argv[]);
+extern void _RS485_read(int argc, char *argv[]);
+#endif 
 
 
 
