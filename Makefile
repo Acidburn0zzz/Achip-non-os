@@ -48,6 +48,15 @@ ifeq "$(DISP_TEST)" "ENABLE"
 	CSOURCES += $(wildcard $(DISP_PATH)/*.c)
 endif
 
+# I2C_TEST = ENABLE
+ifeq "$(I2C_TEST)" "ENABLE"
+	CFLAGS += -DI2C_TEST
+	# i2c test
+	I2C_PATH = drivers/i2c
+	CSOURCES += $(wildcard $(I2C_PATH)/*.c)
+endif
+
+
 # NOC_TEST = ENABLE
 ifeq "$(NOC_TEST)" "ENABLE"
 	CFLAGS += -DNOC_TEST

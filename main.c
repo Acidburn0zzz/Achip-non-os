@@ -108,6 +108,8 @@ int main(void)
 	//disp_initial_settings();
 #endif
 
+
+
 #ifdef NOC_TEST
 	noc_initial_settings();
 #endif
@@ -129,6 +131,11 @@ int main(void)
 #ifdef RS485_TEST
 	rs485_init(10,11,0);	//G_MX[10]_TX --> DI, G_MX[11]_RX --> RO, Gpio_num --> DE_RE 
 #endif 
+
+#ifdef I2C_TEST
+	sp_i2c_master_init();
+	sp_i2c_master_set_freq_khz(0, 100);      // set clk to 100kHz
+#endif
 
 	/* interrupt manager module init */
 	sp_interrupt_setup();
