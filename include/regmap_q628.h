@@ -169,7 +169,7 @@ struct spi_ctrl_regs {
 	unsigned int spi_cfg[3];     // 22.6
 	unsigned int spi_data_64;    // 22.9
 	unsigned int spi_buf_addr;   // 22.10
-	unsigned int spi_statu_2;    // 22.11
+	unsigned int spi_status_2;    // 22.11
 	unsigned int spi_err_status; // 22.12
 	unsigned int spi_data_addr;  // 22.13
 	unsigned int mem_parity_addr;// 22.14

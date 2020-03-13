@@ -529,6 +529,13 @@ static CMD_LIST cmd_list[] =
 #ifdef RS485_TEST
 	{"485w",      _RS485_write,        "RS485 write."},
     {"485r",	   _RS485_read,		    "RS485 read."},
+#endif
+#ifdef SPI_NOR_TEST
+        //{"sfprobe",	Flash_Init,        "spi nor init"},
+        //{"sferase",	FlashErase,        "spi nor erase"},
+        //{"sfread",	FlashRead,         "spi nor read"},
+        //{"sfwrite",	FlashWrite,        "spi nor write"},
+        {"sf",		FlashCommand,      "spi nor command"},
 #endif 
 };
 
