@@ -113,6 +113,80 @@ static void _wreg(int argc, char *argv[])
 }
 
 
+static void _spi_test(int argc, char *argv[])
+{
+	u8	rx_buf[255];
+	u8	tx_buf[255];
+	unsigned int test;
+
+	
+
+	sp_spi_master_set_freq_mode(0, 5000000 ,3);      // set clk to 100kHz
+
+
+
+	tx_buf[0] = 0x00;
+	sp_spi_master_fd_write(0, tx_buf,1);
+
+
+	sp_spi_master_fd_read(0, rx_buf,1);
+
+
+	printf("ADXL345 ID :0x%x\n ",rx_buf[0]);
+
+	tx_buf[0] = 0x2D;
+	tx_buf[1] = 0x0A;	
+	sp_spi_master_fd_write(0, tx_buf ,2);
+
+
+	printf("check power\n ");
+
+
+	tx_buf[0] = 0x32;
+	sp_spi_master_fd_read_write(0, tx_buf,rx_buf ,2, 1);
+	printf("data0 :0x%x\n ",rx_buf[0]);
+
+	tx_buf[0] = 0x33;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[1] ,2, 1);
+	printf("data1 :0x%x\n ",rx_buf[1]);
+
+
+	tx_buf[0] = 0x34;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[2] ,2, 1);
+	printf("data2 :0x%x\n ",rx_buf[2]);
+
+	tx_buf[0] = 0x35;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[3] ,2, 1);
+	printf("data3 :0x%x\n ",rx_buf[3]);
+
+
+	tx_buf[0] = 0x36;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[4] ,2, 1);
+	printf("data4 :0x%x\n ",rx_buf[4]);
+
+	tx_buf[0] = 0x37;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[5] ,2, 1);
+	printf("data5 :0x%x\n ",rx_buf[5]);
+
+
+	test = rx_buf[0]<<8 | rx_buf[1];
+
+	printf("ACCE_X:%d\n ",test);
+
+	test = rx_buf[2]<<8 | rx_buf[3];
+
+	printf("ACCE_Y:%d\n ",test);	
+
+	test = rx_buf[4]<<8 | rx_buf[5];
+
+	printf("ACCE_Z:%d\n ",test);
+
+
+	
+}
+
+
+
 #ifdef NOC_TEST
 
 extern void dump_noc_reg();
@@ -536,6 +610,10 @@ static CMD_LIST cmd_list[] =
         //{"sfread",	FlashRead,         "spi nor read"},
         //{"sfwrite",	FlashWrite,        "spi nor write"},
         {"sf",		FlashCommand,      "spi nor command"},
+#endif 
+
+#ifdef SPI_TEST
+	{"spi",      _spi_test,        "spi test."},
 #endif 
 };
 
