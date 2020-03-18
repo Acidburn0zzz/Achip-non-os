@@ -11,5 +11,7 @@
 #include "timer.h"
 #include "axi_monitor.h"
 #include "../drivers/rs485.h"
+#ifdef SPI_NOR_TEST
 #include "drivers/sp_spi_nor.h"
+#endif
 #endif /* _COMMON_ALL_H_ */

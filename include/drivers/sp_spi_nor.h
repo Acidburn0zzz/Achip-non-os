@@ -24,8 +24,7 @@ typedef unsigned short UINT16;
 typedef unsigned char UINT8;
 typedef unsigned char BYTE;
 
-
-
+extern int sp_spi_nor_claim_bus(unsigned int clock);
 extern void sp_spi_nor_init(void);
 extern int sp_spi_nor_xfer(unsigned int bitlen, const void *dout, void *din, unsigned long flags);
 //extern void Flash_Init(int argc, char *argv[]);
