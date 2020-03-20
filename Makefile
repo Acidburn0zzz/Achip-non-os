@@ -15,7 +15,7 @@ LDFLAGS_COM  = -L $(shell dirname `$(CROSS)gcc -print-libgcc-file-name`) -lgcc
 CFLAGS += -fno-builtin
 CFLAGS += -nodefaultlibs
 CFALGS += -ffunction-sections -fdata-sections -flto
-CFLAGS += -Wall -march=armv7-a -marm -Wno-unused-function -Wno-unused-variable -Wno-implicit-function-declaration
+CFLAGS += -Wall -march=armv7-a -marm -Wno-unused-function -Wno-unused-variable -Wno-implicit-function-declaration -Wno-misleading-indentation
 CFLAGS += -Iinclude -Iinclude/util -I$(TESTAPI)/qch -g
 
 #-mthumb -mthumb-interwork
