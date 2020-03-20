@@ -1,4 +1,5 @@
 .global _SP__vectors
+.align 5
 _SP__vectors:
         LDR PC, =_RESET_handler
         LDR PC, =_UNDEF_INS_handler

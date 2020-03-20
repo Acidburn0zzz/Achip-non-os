@@ -74,10 +74,16 @@ int main(void)
 	hw_init();
 
 	/*initial interrupt vector table*/
+#if 0
 	int_memcpy(0x00000000, __vectors_start, (unsigned)__vectors_end - (unsigned)__vectors_start);
-    /*set VBAR to 0x00000000*/
-    asm volatile ("ldr r0, =#0");
-    asm volatile ("mcr p15, #0, r0, c12, c0, #0");
+	/*set VBAR to 0x00000000*/
+	asm volatile ("ldr r0, =#0");
+	asm volatile ("mcr p15, #0, r0, c12, c0, #0");
+#else
+	/*set VBAR to _SP__vectors*/
+	asm volatile ("ldr r0, =_SP__vectors");
+	asm volatile ("mcr p15, #0, r0, c12, c0, #0");
+#endif
 
 	mmu_init();
 	HAL_DCACHE_ENABLE();
