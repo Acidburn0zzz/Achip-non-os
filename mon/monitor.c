@@ -342,6 +342,11 @@ void _axi(int argc, char *argv[])
 extern void run_disp_init_cmd(int is_hdmi, int width, int height);
 extern void run_colorbar_cmd(int sel, int en);
 extern void run_fetch_data_cmd(int disp_path, int input_fmt);
+extern void run_draw_init_cmd(int disp_path, int input_fmt);
+extern void run_draw_pixel_cmd(int test);
+extern void run_draw_line_cmd(int test);
+extern void run_draw_font_cmd(int test);
+extern void run_draw_clean_cmd(int test);
 static void _disp(int argc, char *argv[])
 {
 	char *cmd, *para1, *para2, *para3;
@@ -383,6 +388,11 @@ static void _disp(int argc, char *argv[])
 		printf("/* disp color hdmitx xx (xx=dis/en).                    */ \n");
 		printf("/* disp fetch ddfch xx (xx=en/nv12/nv16/yuy2).          */ \n");
 		printf("/* disp fetch osd0 xx (xx=en/8bpp/yuy2/argb8888).       */ \n");
+		printf("/* disp draw init xx (xx=8bpp/rgb565/argb8888).         */ \n");
+		printf("/* disp draw pixel xx (xx=test1/test2/test3).           */ \n");
+		printf("/* disp draw line xx (xx=test1/test2/test3).            */ \n");
+		printf("/* disp draw font xx (xx=test1/test2).                  */ \n");
+		printf("/* disp draw clean xx (xx=test1/test2/test3).           */ \n");
 		printf("/********************************************************/ \n");
 	}
 	else {
@@ -570,6 +580,109 @@ static void _disp(int argc, char *argv[])
 			}
 		}
 		run_fetch_data_cmd(value1,value2);
+	} else if (_strncmp(cmd, "draw", cmd_len) == 0) {
+		printf("run draw command.\n");
+		if (_strncmp(para1, "init", para1_len) == 0) {
+			//printf("run draw init command.\n");
+			value1 = 1;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 2;
+				printf("run draw init osd0 [8bpp].\n");
+			}			
+			else if (_strncmp(para2, "8bpp", para2_len) == 0) {
+				value2 = 2;
+				printf("run draw init osd0 [8bpp].\n");
+			}
+			else if (_strncmp(para2, "yuy2", para2_len) == 0) {
+				value2 = 4;
+				printf("run draw init osd0 [yuy2].\n");
+			}
+			else if (_strncmp(para2, "rgb565", para2_len) == 0) {
+				value2 = 8;
+				printf("run draw init osd0 [rgb565].\n");
+			}
+			else if (_strncmp(para2, "argb1555", para2_len) == 0) {
+				value2 = 9;
+				printf("run draw init osd0 [argb1555].\n");
+			}
+			else if (_strncmp(para2, "rgba4444", para2_len) == 0) {
+				value2 = 10;
+				printf("run draw init osd0 [rgba4444].\n");
+			}
+			else if (_strncmp(para2, "argb4444", para2_len) == 0) {
+				value2 = 11;
+				printf("run draw init osd0 [argb4444].\n");
+			}
+			else if (_strncmp(para2, "rgba8888", para2_len) == 0) {
+				value2 = 13;
+				printf("run draw init osd0 [rgba8888].\n");
+			}
+			else if (_strncmp(para2, "argb8888", para2_len) == 0) {
+				value2 = 14;
+				printf("run draw init osd0 [argb8888].\n");
+			}
+			run_draw_init_cmd(value1,value2);
+		}
+		else if (_strncmp(para1, "pixel", para1_len) == 0) {
+			//printf("run draw pixel command.\n");
+			if (_strncmp(para2, "test1", para2_len) == 0) {
+				value1 = 0;
+				printf("run draw pixel osd0 [test1].\n");
+			}
+			else if (_strncmp(para2, "test2", para2_len) == 0) {
+				value1 = 1;
+				printf("run draw pixel osd0 [test2].\n");
+			}
+			else if (_strncmp(para2, "test3", para2_len) == 0) {
+				value1 = 2;
+				printf("run draw pixel osd0 [test3].\n");
+			}
+			run_draw_pixel_cmd(value1);
+		}
+		else if (_strncmp(para1, "line", para1_len) == 0) {
+			//printf("run draw line command.\n");
+			if (_strncmp(para2, "test1", para2_len) == 0) {
+				value1 = 0;
+				printf("run draw line osd0 [test1].\n");
+			}
+			else if (_strncmp(para2, "test2", para2_len) == 0) {
+				value1 = 1;
+				printf("run draw line osd0 [test2].\n");
+			}
+			else if (_strncmp(para2, "test3", para2_len) == 0) {
+				value1 = 2;
+				printf("run draw line osd0 [test3].\n");
+			}
+			run_draw_line_cmd(value1);
+		}
+		else if (_strncmp(para1, "font", para1_len) == 0) {
+			//printf("run draw font command.\n");
+			if (_strncmp(para2, "test1", para2_len) == 0) {
+				value1 = 0;
+				printf("run draw font osd0 [test1].\n");
+			}
+			else if (_strncmp(para2, "test2", para2_len) == 0) {
+				value1 = 1;
+				printf("run draw font osd0 [test2].\n");
+			}
+			run_draw_font_cmd(value1);
+		}
+		else if (_strncmp(para1, "clean", para1_len) == 0) {
+			//printf("run draw clean command.\n");
+			if (_strncmp(para2, "test1", para2_len) == 0) {
+				value1 = 0;
+				printf("run draw clean osd0 [test1].\n");
+			}
+			else if (_strncmp(para2, "test2", para2_len) == 0) {
+				value1 = 1;
+				printf("run draw clean osd0 [test2].\n");
+			}
+			else if (_strncmp(para2, "test3", para2_len) == 0) {
+				value1 = 2;
+				printf("run draw clean osd0 [test3].\n");
+			}
+			run_draw_clean_cmd(value1);
+		}
 	} else {
 		printf("Unknown command.\n");
 	}

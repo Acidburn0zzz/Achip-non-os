@@ -28,6 +28,7 @@
 #include "disp_hdmitx.h"
 
 void run_fetch_data_cmd(int disp_path, int input_fmt);
+void run_draw_init_cmd(int disp_path, int input_fmt);
 
 #ifdef DDFCH_FETCH_EN
 //#include "vpp_pattern/yuv420_NV12_800x480.h"
@@ -51,6 +52,7 @@ void fetch_osd0_path(int input_fmt);
 
 int disp_init_width = 0; 
 int disp_init_height = 0;
+int disp_init_osd0_fmt = 0;
 
 void disp_initial_settings()
 {
@@ -241,7 +243,7 @@ void run_disp_init_cmd(int is_hdmi, int width, int height)
     #endif
 
     #ifdef OSD0_FETCH_EN
-		//osd0_data_addr_list();
+    //osd0_data_addr_list();
 
     #endif
 
@@ -537,4 +539,459 @@ void fetch_osd0_path(int input_fmt)
         }
     }
 }
+
+void run_draw_init_cmd(int disp_path, int input_fmt)
+{
+    printf("run_draw_init_cmd.\n");
+    if (disp_path == 0) {
+        printf("draw ddfch init.\n");
+        printf("draw ddfch init cmd not available.\n");
+    }
+    else if (disp_path == 1) {
+        printf("draw osd0 init.\n");
+        
+        #ifdef OSD0_API_IMPLEMENT
+        disp_init_osd0_fmt = input_fmt;
+        API_OSD_UI_Init(disp_init_width ,disp_init_height, input_fmt);
+        #else
+        printf("draw osd0 init cmd not available.\n");
+        #endif
+    }
+
+}
+
+void run_draw_pixel_cmd(int test)
+{
+    #ifdef OSD0_API_IMPLEMENT
+    INT16 x,y;
+    UINT32 color;
+    int ret;
+    printf("run_draw_pixel_cmd.\n");
+    if (test == 0) {
+        printf("draw pixel test1 \n");
+        if(disp_init_osd0_fmt == 0x2)
+            color = 128;
+        else
+            color = SWAP32(0xb35ad1ff); //with swap (BGRA)
+
+        for (x = 300; x < 500 ; x++) {
+            for (y = 50; y < 150 ; y++) {
+                ret = SP_OSD_DrawPixel(disp_init_osd0_fmt, x, y, color);
+                if(ret)
+                    printf("draw pixel test1 fail \n");
+            }
+        }
+    }
+    else if (test == 1) {
+        printf("draw pixel test2 \n");
+        if(disp_init_osd0_fmt == 0x2) {
+            for (color = 0; color < 256 ; color++) {
+                for (x = 100+color*2; x < 102+color*2 ; x++) {
+                    for (y = 400; y < 450 ; y++) {
+                        ret = SP_OSD_DrawPixel(disp_init_osd0_fmt, x, y, color);
+                        if(ret)
+                            printf("draw pixel test2 fail \n");
+                    }
+                }
+            }
+        }
+        else {
+            ;
+        }
+    }
+    else if (test == 2) {
+        printf("draw pixel test3 \n");
+        if(disp_init_osd0_fmt == 0x2) {
+            for (color = 0; color < 256 ; color++) {
+                for (x = 700; x < 750 ; x++) {
+                    for (y = 100+color; y < 101+color ; y++) {
+                        ret = SP_OSD_DrawPixel(disp_init_osd0_fmt, x, y, color);
+                        if(ret)
+                            printf("draw pixel test3 fail \n");
+                    }
+                }
+            }
+        }
+        else {
+            ;
+        }
+    }
+    #else
+    printf("run_draw_pixel_cmd not support \n");
+    #endif 
+}
+
+void run_draw_line_cmd(int test)
+{
+    #ifdef OSD0_API_IMPLEMENT
+    INT16 x,y,len,width,height;
+    UINT32 color;
+    int ret;
+    printf("run_draw_line_cmd.\n");
+    if (test == 0) {
+        printf("draw line test1 \n");
+        x = 20;
+        y = 20;
+        len = 100;
+        if(disp_init_osd0_fmt == 0x2)
+            color = 138;
+        else
+            color = SWAP32(0x54611aff); //with swap (BGRA)
+
+        ret = SP_OSD_DrawHorizLine(disp_init_osd0_fmt, x, y, len, color);
+        if(ret)
+            printf("draw line test1 fail \n");
+    }
+    else if (test == 1) {
+        printf("draw line test2 \n");
+        x = 20;
+        y = 20;
+        len = 100;
+        if(disp_init_osd0_fmt == 0x2)
+            color = 148;
+        else
+            color = SWAP32(0xf2f2eeff); //with swap (BGRA)
+
+        ret = SP_OSD_DrawVertiLine(disp_init_osd0_fmt, x, y, len, color);
+        if(ret)
+            printf("draw line test2 fail \n");
+    }
+    else if (test == 2) {
+        printf("draw line test3 \n");
+        x = 299;
+        y = 49;
+        width = 202;
+        height = 102;
+        if(disp_init_osd0_fmt == 0x2)
+            color = 158;
+        else
+            color = SWAP32(0x465213ff); //with swap (BGRA)
+
+        ret = SP_OSD_DrawBorderLine(disp_init_osd0_fmt, x, y, width, height, color);
+        if(ret)
+            printf("draw line test3 fail \n");
+    }
+    #else
+    printf("run_draw_line_cmd not support \n");
+    #endif    
+}
+
+//unsigned char draw_font_test0[] = "This is a test for Draw Font,support for 8bpp/yuy2/rgb565/argb1555/rgba4444/argb4444/rgba8888/argb8888";
+unsigned char draw_font_test0[] = "Draw Font 10X20";
+unsigned char draw_font_test1[] = "Draw Font 20X20";
+unsigned char draw_font_test2[] = "Draw Font 12X24";
+unsigned char draw_font_test3[] = "Draw Font 24X24";
+unsigned char draw_font_test4[] = "Draw Font 16X32";
+unsigned char draw_font_test5[] = "Draw Font 32X32";
+unsigned char draw_font_test6[] = "Draw Font 24X48";
+unsigned char draw_font_test7[] = "Draw Font 48X48";
+
+//OSD0_BIG5_COM_FONT_ARIAL_20X20
+unsigned char draw_big5_font_test0[] = {0xA4,0x6A,0xA4,0xAD,0xBD,0x58,0xA1,0x5A,
+                                        0xB0,0xF2,0xA5,0xBB,0xA1,0x47,0xA2,0xB1,
+                                        0xA2,0xAF,0xA2,0xE6,0xA2,0xB1,0xA2,0xAF,
+                                        0xC3,0xB8,0xA6,0x72,0xB4,0xFA,0xB8,0xD5,
+                                        0xA1,0x41,0xA2,0xDD,0xA2,0xD9,0xA1,0x49,0x00};
+//OSD0_BIG5_EXT_FONT_ARIAL_20X20
+unsigned char draw_big5_font_test1[] = {0xA4,0x6A,0xA4,0xAD,0xBD,0x58,0xA1,0x5A,
+                                        0xC2,0x58,0xAE,0x69,0xA1,0x47,0xA2,0xB1,
+                                        0xA2,0xAF,0xA2,0xE6,0xA2,0xB1,0xA2,0xAF,
+                                        0xC3,0xB8,0xA6,0x72,0xB4,0xFA,0xB8,0xD5,
+                                        0xA1,0x41,0xA2,0xDD,0xA2,0xD9,0xA1,0x49,0x00};
+//OSD0_BIG5_COM_FONT_ARIAL_24X24
+unsigned char draw_big5_font_test2[] = {0xA4,0x6A,0xA4,0xAD,0xBD,0x58,0xA1,0x5A,
+                                        0xB0,0xF2,0xA5,0xBB,0xA1,0x47,0xA2,0xB1,
+                                        0xA2,0xB3,0xA2,0xE6,0xA2,0xB1,0xA2,0xB3,
+                                        0xC3,0xB8,0xA6,0x72,0xB4,0xFA,0xB8,0xD5,
+                                        0xA1,0x41,0xA2,0xDD,0xA2,0xD9,0xA1,0x49,0x00};
+//OSD0_BIG5_EXT_FONT_ARIAL_24X24
+unsigned char draw_big5_font_test3[] = {0xA4,0x6A,0xA4,0xAD,0xBD,0x58,0xA1,0x5A,
+                                        0xC2,0x58,0xAE,0x69,0xA1,0x47,0xA2,0xB1,
+                                        0xA2,0xB3,0xA2,0xE6,0xA2,0xB1,0xA2,0xB3,
+                                        0xC3,0xB8,0xA6,0x72,0xB4,0xFA,0xB8,0xD5,
+                                        0xA1,0x41,0xA2,0xDD,0xA2,0xD9,0xA1,0x49,0x00};
+//OSD0_BIG5_COM_FONT_ARIAL_32X32
+unsigned char draw_big5_font_test4[] = {0xA4,0x6A,0xA4,0xAD,0xBD,0x58,0xA1,0x5A,
+                                        0xB0,0xF2,0xA5,0xBB,0xA1,0x47,0xA2,0xB2,
+                                        0xA2,0xB1,0xA2,0xE6,0xA2,0xB2,0xA2,0xB1,
+                                        0xC3,0xB8,0xA6,0x72,0xB4,0xFA,0xB8,0xD5,
+                                        0xA1,0x41,0xA2,0xDD,0xA2,0xD9,0xA1,0x49,0x00};
+//OSD0_BIG5_EXT_FONT_ARIAL_32X32
+unsigned char draw_big5_font_test5[] = {0xA4,0x6A,0xA4,0xAD,0xBD,0x58,0xA1,0x5A,
+                                        0xC2,0x58,0xAE,0x69,0xA1,0x47,0xA2,0xB2,
+                                        0xA2,0xB1,0xA2,0xE6,0xA2,0xB2,0xA2,0xB1,
+                                        0xC3,0xB8,0xA6,0x72,0xB4,0xFA,0xB8,0xD5,
+                                        0xA1,0x41,0xA2,0xDD,0xA2,0xD9,0xA1,0x49,0x00};
+//OSD0_BIG5_COM_FONT_ARIAL_48X48
+unsigned char draw_big5_font_test6[] = {0xA4,0x6A,0xA4,0xAD,0xBD,0x58,0xA1,0x5A,
+                                        0xB0,0xF2,0xA5,0xBB,0xA1,0x47,0xA2,0xB3,
+                                        0xA2,0xB7,0xA2,0xE6,0xA2,0xB3,0xA2,0xB7,
+                                        0xC3,0xB8,0xA6,0x72,0xB4,0xFA,0xB8,0xD5,
+                                        0xA1,0x41,0xA2,0xDD,0xA2,0xD9,0xA1,0x49,0x00};
+//OSD0_BIG5_EXT_FONT_ARIAL_48X48
+unsigned char draw_big5_font_test7[] = {0xA4,0x6A,0xA4,0xAD,0xBD,0x58,0xA1,0x5A,
+                                        0xC2,0x58,0xAE,0x69,0xA1,0x47,0xA2,0xB3,
+                                        0xA2,0xB7,0xA2,0xE6,0xA2,0xB3,0xA2,0xB7,
+                                        0xC3,0xB8,0xA6,0x72,0xB4,0xFA,0xB8,0xD5,
+                                        0xA1,0x41,0xA2,0xDD,0xA2,0xD9,0xA1,0x49,0x00};
+//OSD0_GB2312_COM_FONT_ARIAL_20X20
+unsigned char draw_gb2312_font_test0[] = {0xBA,0xBA,0xD7,0xD6,0xC4,0xDA,0xC2,0xEB,
+                                        0xBB,0xF9,0xB1,0xBE,0xA3,0xBA,0xA3,0xB2,
+                                        0xA3,0xB0,0xA3,0xD8,0xA3,0xB2,0xA3,0xB0,
+                                        0xBB,0xE6,0xD7,0xD6,0xB2,0xE2,0xCA,0xD4,
+                                        0xA3,0xAC,0xA3,0xCF,0xA3,0xCB,0xA3,0xA1,0x00};
+//OSD0_GBK_EXT_FONT_ARIAL_20X20
+unsigned char draw_gb2312_font_test1[] = {0xBA,0xBA,0xD7,0xD6,0xC4,0xDA,0xC2,0xEB,
+                                        0xC0,0xA9,0xD5,0xB9,0xA3,0xBA,0xA3,0xB2,
+                                        0xA3,0xB0,0xA3,0xD8,0xA3,0xB2,0xA3,0xB0,
+                                        0xBB,0xE6,0xD7,0xD6,0xB2,0xE2,0xCA,0xD4,
+                                        0xA3,0xAC,0xA3,0xCF,0xA3,0xCB,0xA3,0xA1,
+                                        0xC0,0x4C,0xD7,0xD6,0x9C,0x79,0xD4,0x87,0x00};
+//OSD0_GB2312_COM_FONT_ARIAL_24X24
+unsigned char draw_gb2312_font_test2[] = {0xBA,0xBA,0xD7,0xD6,0xC4,0xDA,0xC2,0xEB,
+                                        0xBB,0xF9,0xB1,0xBE,0xA3,0xBA,0xA3,0xB2,
+                                        0xA3,0xB4,0xA3,0xD8,0xA3,0xB2,0xA3,0xB4,
+                                        0xBB,0xE6,0xD7,0xD6,0xB2,0xE2,0xCA,0xD4,
+                                        0xA3,0xAC,0xA3,0xCF,0xA3,0xCB,0xA3,0xA1,0x00};
+//OSD0_GBK_EXT_FONT_ARIAL_24X24
+unsigned char draw_gb2312_font_test3[] = {0xBA,0xBA,0xD7,0xD6,0xC4,0xDA,0xC2,0xEB,
+                                        0xC0,0xA9,0xD5,0xB9,0xA3,0xBA,0xA3,0xB2,
+                                        0xA3,0xB4,0xA3,0xD8,0xA3,0xB2,0xA3,0xB4,
+                                        0xBB,0xE6,0xD7,0xD6,0xB2,0xE2,0xCA,0xD4,
+                                        0xA3,0xAC,0xA3,0xCF,0xA3,0xCB,0xA3,0xA1,
+                                        0xC0,0x4C,0xD7,0xD6,0x9C,0x79,0xD4,0x87,0x00};
+//OSD0_GB2312_COM_FONT_ARIAL_32X32
+unsigned char draw_gb2312_font_test4[] = {0xBA,0xBA,0xD7,0xD6,0xC4,0xDA,0xC2,0xEB,
+                                        0xBB,0xF9,0xB1,0xBE,0xA3,0xBA,0xA3,0xB3,
+                                        0xA3,0xB2,0xA3,0xD8,0xA3,0xB3,0xA3,0xB2,
+                                        0xBB,0xE6,0xD7,0xD6,0xB2,0xE2,0xCA,0xD4,
+                                        0xA3,0xAC,0xA3,0xCF,0xA3,0xCB,0xA3,0xA1,0x00};
+//OSD0_GBK_EXT_FONT_ARIAL_32X32
+unsigned char draw_gb2312_font_test5[] = {0xBA,0xBA,0xD7,0xD6,0xC4,0xDA,0xC2,0xEB,
+                                        0xC0,0xA9,0xD5,0xB9,0xA3,0xBA,0xA3,0xB3,
+                                        0xA3,0xB2,0xA3,0xD8,0xA3,0xB3,0xA3,0xB2,
+                                        0xBB,0xE6,0xD7,0xD6,0xB2,0xE2,0xCA,0xD4,
+                                        0xA3,0xAC,0xA3,0xCF,0xA3,0xCB,0xA3,0xA1,
+                                        0xC0,0x4C,0xD7,0xD6,0x9C,0x79,0xD4,0x87,0x00};
+//OSD0_GB2312_COM_FONT_ARIAL_48X48
+unsigned char draw_gb2312_font_test6[] = {0xBA,0xBA,0xD7,0xD6,0xC4,0xDA,0xC2,0xEB,
+                                        0xBB,0xF9,0xB1,0xBE,0xA3,0xBA,0xA3,0xB4,
+                                        0xA3,0xB8,0xA3,0xD8,0xA3,0xB4,0xA3,0xB8,
+                                        0xBB,0xE6,0xD7,0xD6,0xB2,0xE2,0xCA,0xD4,
+                                        0xA3,0xAC,0xA3,0xCF,0xA3,0xCB,0xA3,0xA1,0x00};
+//OSD0_GBK_EXT_FONT_ARIAL_48X48
+unsigned char draw_gb2312_font_test7[] = {0xBA,0xBA,0xD7,0xD6,0xC4,0xDA,0xC2,0xEB,
+                                        0xC0,0xA9,0xD5,0xB9,0xA3,0xBA,0xA3,0xB4,
+                                        0xA3,0xB8,0xA3,0xD8,0xA3,0xB4,0xA3,0xB8,
+                                        0xBB,0xE6,0xD7,0xD6,0xB2,0xE2,0xCA,0xD4,
+                                        0xA3,0xAC,0xA3,0xCF,0xA3,0xCB,0xA3,0xA1,
+                                        0xC0,0x4C,0xD7,0xD6,0x9C,0x79,0xD4,0x87,0x00};
+
+void run_draw_font_cmd(int test)
+{
+    #ifdef OSD0_API_IMPLEMENT
+    int ret;
+    int x,y;
+    int font_type;
+    UINT32 bg_color,font_color;
+
+    printf("run_draw_font_cmd.\n");
+    if (test == 0) {
+        printf("draw font test1 \n");
+
+        if (disp_init_osd0_fmt == 0x2) {
+            bg_color = 255;
+            font_color = 128;
+        }
+        else {
+            bg_color = 0xff30fc9e; //with swap (ARGB)
+            font_color = SWAP32(0xb35ad1ff); //with swap (BGRA)            
+        }
+
+        font_type = 0;
+
+        if ((disp_init_width==720) && (disp_init_height==480))
+            x=0;
+        else
+            x=50;
+        y=20;
+        ret = SP_OSD_DrawString_Ascii_std(draw_font_test0, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+        if(ret)
+            printf("draw font test1 fail1 \n");
+
+        font_type = 1;
+        //x=100;
+        y+=(30);
+        ret = SP_OSD_DrawString_Ascii_std(draw_font_test1, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+        if(ret)
+            printf("draw font test1 fail1 \n");
+
+        font_type = 2;
+        //x=100;
+        y+=(30);
+        ret = SP_OSD_DrawString_Ascii_std(draw_font_test2, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+        if(ret)
+            printf("draw font test1 fail1 \n");
+
+        font_type = 3;
+        //x=100;
+        y+=(34);
+        ret = SP_OSD_DrawString_Ascii_std(draw_font_test3, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+        if(ret)
+            printf("draw font test1 fail1 \n");
+
+        font_type = 4;
+        //x=100;
+        y+=(34);
+        ret = SP_OSD_DrawString_Ascii_std(draw_font_test4, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+        if(ret)
+            printf("draw font test1 fail1 \n");
+
+        font_type = 5;
+        //x=100;
+        y+=(42);
+        ret = SP_OSD_DrawString_Ascii_std(draw_font_test5, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+        if(ret)
+            printf("draw font test1 fail1 \n");
+
+        font_type = 6;
+        //x=100;
+        y+=(42);
+        ret = SP_OSD_DrawString_Ascii_std(draw_font_test6, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+        if(ret)
+            printf("draw font test1 fail1 \n");
+
+        font_type = 7;
+        //x=100;
+        y+=(58);
+        ret = SP_OSD_DrawString_Ascii_std(draw_font_test7, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+        if(ret)
+            printf("draw font test1 fail1 \n");
+
+    }
+    else if (test == 1) {
+        printf("draw font test2 \n");
+
+        if (disp_init_osd0_fmt == 0x2) {
+            bg_color = 255;
+            font_color = 128;
+        }
+        else {
+            bg_color = 0xff30fc9e; //with swap (ARGB)
+            font_color = SWAP32(0xb35ad1ff); //with swap (BGRA)            
+        }
+
+        font_type = 0;
+
+        if ((disp_init_width==720) && (disp_init_height==480))
+            x=0;
+        else
+            x=50;
+        if (font_type == 3) x=0;
+
+        y=20;
+        if (font_type == 0) {
+            ret = SP_OSD_DrawString_Big5_com(draw_big5_font_test0, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=50;
+            ret = SP_OSD_DrawString_Big5_ext(draw_big5_font_test1, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=50;
+            ret = SP_OSD_DrawString_Gb2312_com(draw_gb2312_font_test0, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=50;
+            ret = SP_OSD_DrawString_Gbk_ext(draw_gb2312_font_test1, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+        }
+        else if (font_type == 1) {
+            ret = SP_OSD_DrawString_Big5_com(draw_big5_font_test2, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=60;
+            ret = SP_OSD_DrawString_Big5_ext(draw_big5_font_test3, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=60;
+            ret = SP_OSD_DrawString_Gb2312_com(draw_gb2312_font_test2, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=60;
+            ret = SP_OSD_DrawString_Gbk_ext(draw_gb2312_font_test3, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);            
+        }
+        else if (font_type == 2) {
+            ret = SP_OSD_DrawString_Big5_com(draw_big5_font_test4, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=75;
+            ret = SP_OSD_DrawString_Big5_ext(draw_big5_font_test5, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=75;
+            ret = SP_OSD_DrawString_Gb2312_com(draw_gb2312_font_test4, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=75;
+            ret = SP_OSD_DrawString_Gbk_ext(draw_gb2312_font_test5, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);            
+        }
+        else if (font_type == 3) {
+            ret = SP_OSD_DrawString_Big5_com(draw_big5_font_test6, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=105;
+            ret = SP_OSD_DrawString_Big5_ext(draw_big5_font_test7, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=105;
+            ret = SP_OSD_DrawString_Gb2312_com(draw_gb2312_font_test6, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);
+
+            y+=105;
+            ret = SP_OSD_DrawString_Gbk_ext(draw_gb2312_font_test7, font_type, disp_init_osd0_fmt, x, y, bg_color, font_color);            
+        }
+        if(ret)
+            printf("draw font test2 fail1 \n");
+
+    }
+    #else
+    printf("run_draw_font_cmd not support \n");
+    #endif
+}
+
+void run_draw_clean_cmd(int test)
+{
+    #ifdef OSD0_API_IMPLEMENT
+    UINT32 color;
+    int ret;
+    printf("run_draw_clean_cmd.\n");
+    if (test == 0) {
+        printf("draw clean test1 \n");
+
+        if(disp_init_osd0_fmt == 0x2)
+            color = 200;
+        else
+            color = 0xff30fc9e; //with swap (ARGB)
+
+        ret = SP_OSD_FillArea(disp_init_osd0_fmt, 0, 0, disp_init_width, disp_init_height, color);
+        if(ret)
+            printf("draw clean test1 fail \n");
+    }
+    else if (test == 1) {
+        printf("draw clean test2 \n");
+
+        if(disp_init_osd0_fmt == 0x2)
+            color = 220;
+        else
+            color = SWAP32(0x262a0aff); //with swap (BGRA)
+
+        ret = SP_OSD_FillArea(disp_init_osd0_fmt, 0, 0, disp_init_width, disp_init_height, color);
+        if(ret)
+            printf("draw clean test2 fail \n");
+    }
+    else if (test == 2) {
+        printf("draw clean test3 \n");
+
+        if(disp_init_osd0_fmt == 0x2)
+            color = 0;
+        else
+            color = SWAP32(0x00000000); //with swap (BGRA)
+
+        ret = SP_OSD_FillArea(disp_init_osd0_fmt, 0, 0, disp_init_width, disp_init_height, color);
+        if(ret)
+            printf("draw clean test3 fail \n");
+    }
+    #else
+    printf("run_draw_clean_cmd not support \n");
+    #endif
+}
+
 #endif
