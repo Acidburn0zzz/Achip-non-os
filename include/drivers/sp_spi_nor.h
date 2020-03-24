@@ -273,34 +273,10 @@ typedef struct {
 	UINT32 G22_RESERVED[12];
 } sp_spi_nor_regs;
 #endif
-struct sp_spi_nor_platdata {
-	struct sp_spi_nor_regs *regs;
-	unsigned int clock;
-	unsigned int mode;
-	unsigned int chipsel;
-};
-
-#if (SP_SPINOR_DMA)
-struct spinorbufdesc {
-	uint32_t idx;
-	uint32_t size;
-	dma_addr_t phys;
-} __aligned(ARCH_DMA_MINALIGN);
-#endif
-
-struct sp_spi_nor_priv {
-	struct sp_spi_nor_regs *regs;
-	unsigned int clock;
-	unsigned int mode;
-	unsigned int chipsel;
-#if (SP_SPINOR_DMA)
-	struct spinorbufdesc wchain;
-	struct spinorbufdesc rchain;
-	UINT8 w_buf[CFG_BUFF_MAX] __aligned(ARCH_DMA_MINALIGN);
-	UINT8 r_buf[CFG_BUFF_MAX] __aligned(ARCH_DMA_MINALIGN);
-#endif
-};
 
 //extern char *data_pool[SPI_DATA64_MAX_LEN];
 extern UINT8 data_pool[SPI_DATA64_MAX_LEN];
+#if (SP_SPINOR_DMA)
+extern u8 dma_buff[CFG_BUFF_MAX];
+#endif
 #endif /* __SP_SPI_NOR_H */

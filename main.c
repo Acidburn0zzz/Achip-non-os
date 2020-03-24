@@ -6,6 +6,11 @@
 #include "common_all.h"
 #include "cache.h"
 
+#ifdef SPI_NOR_TEST
+#if (SP_SPINOR_DMA)
+u8 dma_buff[CFG_BUFF_MAX];
+#endif
+#endif
 #ifdef DISP_TEST
 extern void disp_initial_settings();
 #endif
