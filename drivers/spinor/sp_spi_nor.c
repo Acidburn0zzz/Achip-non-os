@@ -162,7 +162,6 @@ static int spi_flash_xfer_DMAread(UINT8 *cmd, UINT32 cmd_len, void *data, UINT32
 
         memset(dma_buff, 0, CFG_BUFF_MAX);
 	diag_printf("%s\n",__FUNCTION__);
-	printf("dma_buff[0] 0x%x $dam_buff[0] 0x%x\n", dma_buff[0], &dma_buff[0]);
 	msg_printf("DMA read :data length 0x%x cmd_len 0x%x, cmd[0] 0x%x\n",data_len, cmd_len, cmd[0]);
 	while ((SPI_CTRL_REG->spi_auto_cfg & DMA_TRIGGER) ||  (SPI_CTRL_REG->spi_ctrl & SPI_CTRL_BUSY)) {
 		time++;
