@@ -112,6 +112,7 @@ static void _wreg(int argc, char *argv[])
 	wreg_r(group , index, value);
 }
 
+#ifdef SPI_TEST
 
 static void _spi_test(int argc, char *argv[])
 {
@@ -185,6 +186,197 @@ static void _spi_test(int argc, char *argv[])
 	
 }
 
+#endif
+
+#ifdef I2C_TEST
+
+static void _i2c_test(int argc, char *argv[])
+{
+	u8	rx_buf[255];
+	u8	tx_buf[255];
+	unsigned int test;
+
+
+#if(0)
+
+	u8	data_buf[255];
+
+	tx_buf[0] = 0x6B;
+	tx_buf[1] = 0X00;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 2);
+
+	tx_buf[0] = 0x19;
+	tx_buf[1] = 0X07;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+	tx_buf[0] = 0x1A;
+	tx_buf[1] = 0X06;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+	tx_buf[0] = 0x1C;
+	tx_buf[1] = 0X01;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+
+	tx_buf[0] = 0x3B;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);
+	sp_i2c_read(0, 0x68 , &data_buf[0] , 1);
+	//printf("data_buf0:%lx\n ",data_buf[0]);
+	//printf("data_bufR0_addr:%lx\n ",&data_buf[0]);
+
+	tx_buf[0] = 0x3C;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);	
+	sp_i2c_read(0, 0x68 , &data_buf[1] , 1);
+	//printf("data_buf1:%x\n ",data_buf[1]);	
+	//printf("data_bufR1_addr:%x\n ",&data_buf[1]);
+
+
+	test = data_buf[0]<<8 | data_buf[1];
+
+	printf("ACCE_X:%d\n ",test);
+
+
+	tx_buf[0] = 0x3D;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);
+	sp_i2c_read(0, 0x68 , &data_buf[0] , 1);
+	//printf("data_buf0:%lx\n ",data_buf[0]);
+	//printf("data_bufR0_addr:%lx\n ",&data_buf[0]);
+
+	tx_buf[0] = 0x3E;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);	
+	sp_i2c_read(0, 0x68 , &data_buf[1] , 1);
+	//printf("data_buf1:%x\n ",data_buf[1]);	
+	//printf("data_bufR1_addr:%x\n ",&data_buf[1]);
+
+
+	test = data_buf[0]<<8 | data_buf[1];
+
+	printf("ACCE_Y:%d\n ",test);
+
+
+	tx_buf[0] = 0x3F;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);
+	sp_i2c_read(0, 0x68 , &data_buf[0] , 1);
+	//printf("data_buf0:%lx\n ",data_buf[0]);
+	//printf("data_bufR0_addr:%lx\n ",&data_buf[0]);
+
+	tx_buf[0] = 0x40;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);	
+	sp_i2c_read(0, 0x68 , &data_buf[1] , 1);
+	//printf("data_buf1:%x\n ",data_buf[1]);	
+	//printf("data_bufR1_addr:%x\n ",&data_buf[1]);
+
+
+	test = data_buf[0]<<8 | data_buf[1];
+
+	printf("ACCE_Z:%d\n ",test);
+
+
+
+#endif
+
+
+
+
+#if(1)
+
+
+	tx_buf[0] = 0x6B;
+	tx_buf[1] = 0X00;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 2);
+
+	while(i2c_check(0))
+	{
+		}	
+
+	tx_buf[0] = 0x19;
+	tx_buf[1] = 0X07;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+	while(i2c_check(0))
+	{
+		}
+
+
+	tx_buf[0] = 0x1A;
+	tx_buf[1] = 0X06;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+	while(i2c_check(0))
+	{
+		}
+
+
+	tx_buf[0] = 0x1C;
+	tx_buf[1] = 0X01;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 2);
+
+	while(i2c_check(0))
+	{
+		}
+
+
+
+	tx_buf[0] = 0x3B;
+	//sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 1);
+	//sp_i2c_irq_read(0, 0x68 , &rx_buf[0] , 1);
+
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 1);
+
+	//printf("i2c00 !!\n");
+
+
+	while(i2c_check(0))
+	{
+		}
+
+
+	sp_i2c_irq_read(0, 0x68 , &rx_buf[0] , 1);
+
+
+	while(i2c_check(0))
+	{
+		}
+
+	printf("data_buf0:%lx\n ",rx_buf[0]);
+
+
+
+	tx_buf[0] = 0x3C;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 1);	
+
+	while(i2c_check(0))
+	{
+		}
+
+
+	sp_i2c_irq_read(0, 0x68 , &rx_buf[1] , 1);
+
+
+	while(i2c_check(0))
+	{
+		}
+	
+	printf("data_buf1:%lx\n ",rx_buf[1]);
+
+
+
+
+	//sp_i2c_dma_irq_read(0, 0x68 , &rx_buf[0] , 1);
+
+
+	//sp_spi_master_fd_read_write_irq(0, &tx_buf[0], &rx_buf[0],60, 2 );
+
+#endif
+	
+}
+
+#endif
 
 
 #ifdef NOC_TEST
@@ -719,6 +911,15 @@ static CMD_LIST cmd_list[] =
 #endif
 #ifdef SPI_NOR_TEST
         {"sf",		FlashCommand,      "spi nor command"},
+#endif 
+
+#ifdef SPI_TEST
+	{"spi",      _spi_test,        "spi test."},
+#endif 
+
+
+#ifdef I2C_TEST
+	{"i2c",      _i2c_test,        "i2c test."},
 #endif 
 };
 

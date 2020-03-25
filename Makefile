@@ -56,7 +56,7 @@ ifeq "$(I2C_TEST)" "ENABLE"
 	CSOURCES += $(wildcard $(I2C_PATH)/*.c)
 endif
 
-SPI_TEST = ENABLE
+#SPI_TEST = ENABLE
 ifeq "$(SPI_TEST)" "ENABLE"
 	CFLAGS += -DSPI_TEST
 	# i2c test

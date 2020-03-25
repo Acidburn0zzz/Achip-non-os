@@ -117,9 +117,15 @@ int main(void)
 	rs485_init(10,11);	//G_MX[10]_TX --> DI, G_MX[11]_RX --> RO 
 #endif 
 
+#ifdef SPI_TEST
+  	sp_spi_master_fd_init();
+	//spi_irq_init(0);
+#endif
+
 #ifdef I2C_TEST
 	sp_i2c_master_init();
 	sp_i2c_master_set_freq_khz(0, 100);      // set clk to 100kHz
+        //i2c_irq_init(0);
 #endif
 
 	/* interrupt manager module init */

@@ -1,6 +1,7 @@
 #include <types.h>
 #include "common_all.h"
 #include "cache.h"
+#include "sp_interrupt.h"
 
 
 
@@ -246,6 +247,13 @@ typedef	struct regs_i2cm_gdma_s{
 #define I2C_DMA_ADDR_2         0x9C004880
 #define I2C_DMA_ADDR_3         0x9C004980
 
+static volatile unsigned int i2c_repeat_cnt = 0;
+
+
+#define I2C0_RISC_INT  (174)
+#define I2C1_RISC_INT  (175)
+#define I2C2_RISC_INT  (176)
+#define I2C3_RISC_INT  (177)
 
 
 
@@ -263,9 +271,9 @@ enum
 
 
 typedef enum I2C_State_e_ {
+	I2C_IDLE_STATE,   /* i2c is idle */	
 	I2C_WRITE_STATE,  /* i2c is write */
 	I2C_READ_STATE,   /* i2c is read */
-	I2C_IDLE_STATE,   /* i2c is idle */
 	I2C_DMA_WRITE_STATE,/* i2c is dma write */
 	I2C_DMA_READ_STATE, /* i2c is dma read */
 } I2C_State_e;
@@ -289,6 +297,8 @@ struct i2c_master_ctlr {
     unsigned int DataIndex;
     unsigned int RegDataIndex;
     unsigned int DataTotalLen;
+
+	u8 *buf;
 
 
 };
@@ -432,6 +442,299 @@ void sp_i2c_data0_set(unsigned int device_id, unsigned int *wdata)
 }
 
 
+int  i2c_check(unsigned int i2c_no)
+{
+
+I2C_MAS_REG * i2c_regs = (I2C_MAS_REG *)i2c_mas_ctlr[i2c_no].reg_adr;
+
+//printf("i2c_regs_i2c_check 0x%x \n",i2c_regs);
+
+
+//printf("i2c_regs->int_en0-00: 0x%x \n", i2c_regs->int_en0);
+//printf("i2c_regs->int_en1-00: 0x%x \n", i2c_regs->int_en1);
+//printf("i2c_regs->int_en2-00: 0x%x \n", i2c_regs->int_en2); 
+
+//printf("i2c_check->control4: 0x%x \n", i2c_regs->control4); 
+
+
+//printf("check->int 0x%x\n",i2c_regs->interrupt);
+
+
+return i2c_mas_ctlr[i2c_no].RWState;
+
+}
+
+
+void  i2c_irq_handler(unsigned int i2c_no)
+{
+
+    unsigned int temp_reg;
+    unsigned int i,j,k;
+    unsigned int status3,bit_index; 
+	unsigned char w_data[32] = {0};
+
+
+    I2C_MAS_REG * i2c_regs = (I2C_MAS_REG *)i2c_mas_ctlr[i2c_no].reg_adr;
+	I2C_MAS_DMA_REG * i2c_dma_regs = (I2C_MAS_DMA_REG *)i2c_mas_ctlr[i2c_no].dma_adr;	
+
+	//printf("handler->int 0x%x\n",i2c_regs->interrupt);
+	//printf("i2c_dma_regs->int_flag00 0x%x\n",i2c_dma_regs->int_flag );
+		
+	if((i2c_regs->interrupt & I2C_INT_ADDRESS_NACK_FLAG)== I2C_INT_ADDRESS_NACK_FLAG){
+		printf("I2C slave address NACK !!\n");
+		i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+        i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;
+		return;
+	}else if((i2c_regs->interrupt & I2C_INT_DATA_NACK_FLAG)== I2C_INT_DATA_NACK_FLAG){
+		printf("I2C slave data NACK !!\n");
+		i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+        i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;
+		return;
+	}else if((i2c_regs->interrupt & I2C_INT_SCL_HOLD_TOO_LONG_FLAG)== I2C_INT_SCL_HOLD_TOO_LONG_FLAG){
+		printf("I2C SCL hold too long occur !!\n");
+		i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+        i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;
+		return;
+	}
+
+
+	switch(i2c_mas_ctlr[i2c_no].RWState){
+		
+		case I2C_READ_STATE:		
+		    if(i2c_mas_ctlr[i2c_no].BurstCount){
+		   		status3 = i2c_regs->i2cm_status3;
+		   	    for(i=0;i<(32/I2C_BURST_RDATA_BYTES);i++){	  
+		   		    bit_index = (I2C_BURST_RDATA_BYTES - 1) + (I2C_BURST_RDATA_BYTES * i);
+		   		    if(status3 & (1 << bit_index)) {
+		   			   for (j = 0; j < (I2C_BURST_RDATA_BYTES / 4); j++) {
+		   				    k = i2c_mas_ctlr[i2c_no].BurstRemainder + j;
+		   			    	if (k >= 8) {
+		   				    	k -= 8;
+		   				   }
+		   			   sp_i2c_data_get(i2c_no, k, (unsigned int *)(&i2c_mas_ctlr[i2c_no].buf[i2c_mas_ctlr[i2c_no].DataIndex]));
+		   
+		   			   i2c_mas_ctlr[i2c_no].DataIndex += 4;
+		   			   }
+		   			    i2c_regs->control6 = (((1 << I2C_BURST_RDATA_BYTES) - 1) << (I2C_BURST_RDATA_BYTES * i));
+		   			    i2c_regs->control6 = 0;
+		   			    i2c_mas_ctlr[i2c_no].RegDataIndex += (I2C_BURST_RDATA_BYTES / 4);
+		   			    if (i2c_mas_ctlr[i2c_no].RegDataIndex >= 8) {
+		   			    	i2c_mas_ctlr[i2c_no].RegDataIndex -= 8;
+		   			    }
+		   			    i2c_mas_ctlr[i2c_no].BurstCount --;
+		   	    	}
+		   	   }
+		   	}
+		   
+		     //printf("i2c_regs->interrupt01 0x%x\n",i2c_regs->interrupt);
+		   
+		       if ((i2c_regs->interrupt & I2C_INT_DONE_FLAG) == I2C_INT_DONE_FLAG) {
+		   //	printf("R_DONE \n");
+			       if ((i2c_mas_ctlr[i2c_no].BurstRemainder)&&(i2c_mas_ctlr[i2c_no].RWState == I2C_READ_STATE)) {
+			   	       j = 0;
+			   		   for (i = 0; i < (I2C_BURST_RDATA_BYTES / 4); i++) {
+			   			   k = i2c_mas_ctlr[i2c_no].RegDataIndex + i;
+			   			   if (k >= 8) {
+			   			       k -= 8;
+			   			   }
+			   			   sp_i2c_data_get(i2c_no, k, (unsigned int *)(&rx_data_buf[i2c_no][j]));
+			   			   j += 4;
+			   		   }
+			   
+			   		   for (i = 0; i < i2c_mas_ctlr[i2c_no].BurstRemainder; i++) {
+			   			   i2c_mas_ctlr[i2c_no].DataIndex = i2c_mas_ctlr[i2c_no].DataIndex + i;
+			   			   i2c_mas_ctlr[i2c_no].buf[i2c_mas_ctlr[i2c_no].DataIndex] = rx_data_buf[i2c_no][i]; 		
+			   		   }
+			   		//printf("I2C_data i %d ",i);
+			   	   }
+			   	   i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+			       i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;
+		       }       
+	   break;   
+			   
+	    case I2C_WRITE_STATE:
+			if(((i2c_regs->interrupt & I2C_INT_EMPTY_THRESHOLD_FLAG) == I2C_INT_EMPTY_THRESHOLD_FLAG) 
+				&& (i2c_mas_ctlr[i2c_no].BurstCount >0)){			
+				for (i = 0; i < I2C_EMPTY_THRESHOLD_VALUE; i++) {
+					for (j = 0; j < 4; j++) {
+						if (i2c_mas_ctlr[i2c_no].DataIndex >= i2c_mas_ctlr[i2c_no].DataTotalLen) {
+							w_data[j] = 0;
+						} else {
+							w_data[j] = i2c_mas_ctlr[i2c_no].buf[i2c_mas_ctlr[i2c_no].DataIndex];
+						}
+							i2c_mas_ctlr[i2c_no].DataIndex++;
+					}
+					sp_i2c_data0_set(i2c_no, (unsigned int *)w_data);
+					i2c_mas_ctlr[i2c_no].BurstCount--;
+									
+					if (i2c_mas_ctlr[i2c_no].BurstCount == 0) {
+						i2c_regs->int_en0 &= (~(I2C_EN0_EMPTY_THRESHOLD_INT | I2C_EN0_EMPTY_INT));
+						break;
+					}
+			   }
+			    i2c_regs->control1 |= I2C_CTL1_EMPTY_THRESHOLD_CLR;
+			    i2c_regs->control1 &= ~(I2C_CTL1_EMPTY_THRESHOLD_CLR);
+			
+		    }
+
+
+			if ((i2c_regs->interrupt & I2C_INT_DONE_FLAG) == I2C_INT_DONE_FLAG) {
+		   	//printf("W_DONE \n");					
+			    i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+			    i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;
+			}
+	   break;	 
+
+
+
+	   case I2C_DMA_READ_STATE:
+	   case I2C_DMA_WRITE_STATE:	   	
+		   if(((i2c_regs->interrupt & I2C_INT_DONE_FLAG) == I2C_INT_DONE_FLAG) && 
+		   	((i2c_dma_regs->int_flag & I2C_DMA_INT_DMA_DONE_FLAG) == I2C_DMA_INT_DMA_DONE_FLAG)){
+
+			   //printf("I2C_DMA finish\n");
+			   i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+			   i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;
+			}
+			else{
+				if((i2c_dma_regs->int_flag & I2C_DMA_INT_WCNT_ERROR_FLAG) == I2C_DMA_INT_WCNT_ERROR_FLAG){
+					printf("I2C DMA WCNT ERR !!\n");
+					i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+			        i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;					
+					return;
+				}else if((i2c_dma_regs->int_flag & I2C_DMA_INT_WB_EN_ERROR_FLAG) == I2C_DMA_INT_WB_EN_ERROR_FLAG){
+					printf("I2C DMA WB EN ERR !!\n");
+					i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+			        i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;					
+					return;
+				}else if((i2c_dma_regs->int_flag & I2C_DMA_INT_GDMA_TIMEOUT_FLAG) == I2C_DMA_INT_GDMA_TIMEOUT_FLAG){
+					printf("I2C DMA timeout !!\n");
+					i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+			        i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;					
+					return;
+				}else if((i2c_dma_regs->int_flag & I2C_DMA_INT_IP_TIMEOUT_FLAG) == I2C_DMA_INT_IP_TIMEOUT_FLAG){
+					printf("I2C IP timeout !!\n");
+					i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+			        i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;					
+					return;
+				}else if((i2c_dma_regs->int_flag & I2C_DMA_INT_THRESHOLD_FLAG) == I2C_DMA_INT_THRESHOLD_FLAG){
+					printf("I2C Length is zero !!\n");
+					i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+			        i2c_mas_ctlr[i2c_no].RWState = I2C_IDLE_STATE;					
+					return;					
+				}			
+			}
+	  default:
+	      break;	
+	}
+
+}
+
+
+
+static void i2c0_isr_cfg()
+{
+	//printf("[CFG] i2c0\n");
+	hal_interrupt_configure(I2C0_RISC_INT, 0, 1);
+	hal_interrupt_unmask(I2C0_RISC_INT);
+}
+
+
+void i2c0_callback(void)
+{
+	//printf("@i2c0_Hello[%d]\n", ++i2c_repeat_cnt);
+	i2c_irq_handler(0);
+}
+
+
+static void i2c1_isr_cfg()
+{
+	//printf("[CFG] i2c1\n");
+	hal_interrupt_configure(I2C1_RISC_INT, 0, 1);
+	hal_interrupt_unmask(I2C1_RISC_INT);
+
+}
+
+
+void i2c1_callback(void)
+{
+	//printf("@i2c1_Hello[%d]\n", ++i2c_repeat_cnt);
+	i2c_irq_handler(1);
+}
+
+static void i2c2_isr_cfg()
+{
+	//printf("[CFG] i2c2\n");
+	hal_interrupt_configure(I2C2_RISC_INT, 0, 1);
+	hal_interrupt_unmask(I2C2_RISC_INT);	
+}
+
+
+void i2c2_callback(void)
+{
+	printf("@i2c2_Hello[%d]\n", ++i2c_repeat_cnt);
+	i2c_irq_handler(2);
+}
+
+static void i2c3_isr_cfg()
+{
+	//printf("[CFG] i2c3\n");
+	hal_interrupt_configure(I2C3_RISC_INT, 0, 1);
+	hal_interrupt_unmask(I2C3_RISC_INT);		
+}
+
+
+void i2c3_callback(void)
+{
+	//printf("@i2c3_Hello[%d]\n", ++i2c_repeat_cnt);
+	i2c_irq_handler(3);	
+}
+
+
+void i2c_irq_init(unsigned int i2c_no)
+{
+	static interrupt_operation i2c_opt;	
+
+	switch(i2c_no){
+		case 0:
+		    memcpy(i2c_opt.dev_name, "i2c0", strlen("i2c0"));
+		    i2c_opt.vector = I2C0_RISC_INT;
+		    i2c_opt.device_config = i2c0_isr_cfg;
+		    i2c_opt.interrupt_handler = i2c0_callback;
+		    interrupt_register(&i2c_opt);
+			break;
+		case 1:
+		    memcpy(i2c_opt.dev_name, "i2c1", strlen("i2c1"));
+		    i2c_opt.vector = I2C1_RISC_INT;
+		    i2c_opt.device_config = i2c1_isr_cfg;
+		    i2c_opt.interrupt_handler = i2c1_callback;
+		    interrupt_register(&i2c_opt);
+			break;
+
+		case 2:
+		    memcpy(i2c_opt.dev_name, "i2c2", strlen("i2c2"));
+		    i2c_opt.vector = I2C2_RISC_INT;
+		    i2c_opt.device_config = i2c2_isr_cfg;
+		    i2c_opt.interrupt_handler = i2c2_callback;
+		    interrupt_register(&i2c_opt);
+			break;
+			
+		case 3:
+		    memcpy(i2c_opt.dev_name, "i2c3", strlen("i2c3"));
+		    i2c_opt.vector = I2C3_RISC_INT;
+		    i2c_opt.device_config = i2c3_isr_cfg;
+		    i2c_opt.interrupt_handler = i2c3_callback;
+		    interrupt_register(&i2c_opt);
+			break;
+
+		default:
+			break;
+	}
+
+
+}
+
+
 
 
 void sp_i2c_read(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned int len)
@@ -463,6 +766,7 @@ void sp_i2c_read(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned 
 	int1 = I2C_BURST_RDATA_FLAG;
 	int2 = I2C_BURST_RDATA_ALL_FLAG;
 
+	i2c_mas_ctlr[i2c_no].buf = data_buf ;
 	i2c_mas_ctlr[i2c_no].BurstCount = len / I2C_BURST_RDATA_BYTES;
 	i2c_mas_ctlr[i2c_no].BurstRemainder = len % I2C_BURST_RDATA_BYTES;
 	i2c_mas_ctlr[i2c_no].DataIndex = 0;	
@@ -542,7 +846,7 @@ void sp_i2c_read(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned 
 
         }
 		}
-	};
+	}
 
 
 	//printf("i2c_regs->interrupt01 0x%x\n",i2c_regs->interrupt);
@@ -599,7 +903,8 @@ void sp_i2c_write(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned
     //delay_1ms(1);
 
 	//printf("data_buf0 = 0x%x, data_buf1 = 0x%x\n", data_buf[0], data_buf[1]);
-
+	//printf("data_bufW00_addr:%x\n ",data_buf);
+	//printf("i2c_regs 0x%x \n",i2c_regs);
 
 
 	write_cnt = len;
@@ -632,7 +937,7 @@ void sp_i2c_write(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned
 	if (burst_cnt)
 	    int0 |= I2C_EN0_EMPTY_THRESHOLD_INT;
 
-
+	i2c_mas_ctlr[i2c_no].buf = data_buf ;
 	i2c_mas_ctlr[i2c_no].RWState = I2C_WRITE_STATE;
 	i2c_mas_ctlr[i2c_no].BurstCount = burst_cnt;
 	i2c_mas_ctlr[i2c_no].DataIndex = i;
@@ -677,7 +982,8 @@ void sp_i2c_write(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned
             break;
 		}
 		
-        if((i2c_regs->interrupt & I2C_INT_EMPTY_THRESHOLD_FLAG) == I2C_INT_EMPTY_THRESHOLD_FLAG){
+        if(((i2c_regs->interrupt & I2C_INT_EMPTY_THRESHOLD_FLAG) == I2C_INT_EMPTY_THRESHOLD_FLAG) 
+			&& (i2c_mas_ctlr[i2c_no].BurstCount >0)){
 		    for (i = 0; i < I2C_EMPTY_THRESHOLD_VALUE; i++) {
 			    for (j = 0; j < 4; j++) {
 				    if (i2c_mas_ctlr[i2c_no].DataIndex >= i2c_mas_ctlr[i2c_no].DataTotalLen) {
@@ -966,6 +1272,361 @@ void sp_i2c_dma_write(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsi
 
 }
 
+
+void sp_i2c_irq_read(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned int len)
+{
+
+	unsigned int temp_reg;
+	unsigned int i,j,k;
+	unsigned int status3,bit_index;	
+	unsigned int freq;		
+    unsigned int ctl0 = 0;	
+	unsigned int int0 = 0, int1 = 0, int2 = 0;
+
+	
+	I2C_MAS_REG * i2c_regs = (I2C_MAS_REG *)i2c_mas_ctlr[i2c_no].reg_adr;
+
+
+	//printf("i2c_read \n");
+	//printf("i2c_regs_r 0x%x \n",i2c_regs);
+
+
+	//printf("grp3_sft_cfg[10] %x, grp3_sft_cfg %x\n", grp3_sft_cfg[10], *grp3_sft_cfg);
+	//printf("i2cread\n");
+	//printf("i2c_no : %d, slave_addr: 0x%x , len %d\n", i2c_no, slave_addr,len);
+	//printf("sp_i2c_read 0x%x 0x%x\n",i2c_regs,i2c_mas_ctlr[i2c_no].reg_adr);
+
+
+    i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+    //delay_1ms(1);
+
+	int0 = (I2C_EN0_SCL_HOLD_TOO_LONG_INT | I2C_EN0_EMPTY_INT | I2C_EN0_DATA_NACK_INT
+			| I2C_EN0_ADDRESS_NACK_INT | I2C_EN0_DONE_INT );	
+
+	int1 = I2C_BURST_RDATA_FLAG;
+	int2 = I2C_BURST_RDATA_ALL_FLAG;
+
+	i2c_mas_ctlr[i2c_no].buf = data_buf ;
+	i2c_mas_ctlr[i2c_no].BurstCount = len / I2C_BURST_RDATA_BYTES;
+	i2c_mas_ctlr[i2c_no].BurstRemainder = len % I2C_BURST_RDATA_BYTES;
+	i2c_mas_ctlr[i2c_no].DataIndex = 0;	
+	i2c_mas_ctlr[i2c_no].RegDataIndex = 0;
+    i2c_mas_ctlr[i2c_no].RWState = I2C_READ_STATE;
+    i2c_mas_ctlr[i2c_no].DataTotalLen = len;
+
+  
+    i2c_regs->control0 &= (~I2C_CTL0_FREQ(I2C_CTL0_FREQ_MASK));
+
+	i2c_regs->control2 &= (~I2C_CTL2_FREQ_CUSTOM(I2C_CTL2_FREQ_CUSTOM_MASK));
+	freq = (I2C_FREQ / i2c_mas_ctlr[i2c_no].freq) - 1;
+	i2c_regs->control2 |= freq;   // 27M/270 =  100k hz
+
+
+    i2c_regs->control0 &= (~I2C_CTL0_SLAVE_ADDR(I2C_CTL0_SLAVE_ADDR_MASK));
+    i2c_regs->control0 |= I2C_CTL0_SLAVE_ADDR(slave_addr);                        // set slave address	
+
+    //i2c_regs->control2 = I2C_CTL7_WRCOUNT(write_cnt) | I2C_CTL7_RDCOUNT(read_cnt);
+    i2c_regs->control7  = I2C_CTL7_WRCOUNT(0x00) | I2C_CTL7_RDCOUNT(len);     // set read writer count
+
+	
+    i2c_regs->i2cm_mode &= (~(I2C_MODE_MANUAL_MODE | I2C_MODE_MANUAL_TRIG));   // Trigger mode  
+    i2c_regs->control0 &= (~(I2C_CTL0_RESTART_EN | I2C_CTL0_SUBADDR_EN));
+    i2c_regs->control0 |= I2C_CTL0_PREFETCH;                                   // set read mode
+
+
+	//printf("control0-3 0x%x \n",i2c_regs->control0);
+
+
+	//printf("i2c_read09 \n");
+
+
+    i2c_regs->i2cm_mode |= I2C_MODE_MANUAL_TRIG;   // start Trigger 
+
+
+	i2c_regs->int_en0 = int0;
+	i2c_regs->int_en1 = int1;
+	i2c_regs->int_en2 = int2;
+
+    //printf("read->int_en0: 0x%x \n", i2c_regs->int_en0);
+    // printf("read->int_en1: 0x%x \n", i2c_regs->int_en1);
+	// printf("read->int_en2: 0x%x \n", i2c_regs->int_en2);
+
+	// printf("read->control4: 0x%x \n", i2c_regs->control4);
+
+	
+}
+
+
+void sp_i2c_irq_write(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned int len)
+{
+
+	unsigned int temp_reg;
+	unsigned int i,j,k;
+	unsigned int status3,bit_index;	
+	unsigned int freq;		
+    unsigned int ctl0 = 0;	
+	unsigned int int0 = 0, int1 = 0, int2 = 0;
+	
+	unsigned char w_data[32] = {0};
+	unsigned int write_cnt = 0;
+	unsigned int burst_cnt = 0;
+
+	
+	I2C_MAS_REG * i2c_regs = (I2C_MAS_REG *)i2c_mas_ctlr[i2c_no].reg_adr;
+
+
+    i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+    //delay_1ms(1);
+
+	//printf("data_buf0 = 0x%x, data_buf1 = 0x%x\n", data_buf[0], data_buf[1]);	
+	//printf("data_bufW00_addr:%x\n ",data_buf);
+	//printf("i2c_regs_write 0x%x \n",i2c_regs);
+
+
+	write_cnt = len;
+
+	if (write_cnt > 0xFFFF) {
+	    printf("I2C write count is invalid !! write count=%d\n", write_cnt);
+		//return I2C_ERR_INVALID_CNT;
+		  return;
+	}
+
+	if (write_cnt > 32) {
+		burst_cnt = (write_cnt - 32) / 4;
+		if ((write_cnt - 32) % 4) {
+			burst_cnt += 1;
+		}
+
+		for (i = 0; i < 32; i++) {
+			w_data[i] = data_buf[i];
+		}
+	} else {
+		for(i = 0; i < write_cnt; i++){
+			w_data[i] = data_buf[i];
+		}
+	}
+	//printf("write_cnt = %d, burst_cnt = %d\n", write_cnt, burst_cnt);
+
+	int0 = (I2C_EN0_SCL_HOLD_TOO_LONG_INT | I2C_EN0_EMPTY_INT | I2C_EN0_DATA_NACK_INT
+			| I2C_EN0_ADDRESS_NACK_INT | I2C_EN0_DONE_INT );
+
+	if (burst_cnt)
+	    int0 |= I2C_EN0_EMPTY_THRESHOLD_INT;
+
+	i2c_mas_ctlr[i2c_no].buf = data_buf ;
+	i2c_mas_ctlr[i2c_no].RWState = I2C_WRITE_STATE;
+	i2c_mas_ctlr[i2c_no].BurstCount = burst_cnt;
+	i2c_mas_ctlr[i2c_no].DataIndex = i;
+	i2c_mas_ctlr[i2c_no].DataTotalLen = write_cnt;
+	
+    i2c_regs->control0 &= (~I2C_CTL0_FREQ(I2C_CTL0_FREQ_MASK));
+
+	i2c_regs->control2 &= (~I2C_CTL2_FREQ_CUSTOM(I2C_CTL2_FREQ_CUSTOM_MASK));
+	freq = (I2C_FREQ / i2c_mas_ctlr[i2c_no].freq) - 1;
+
+	//printf("i2c_freq %d \n",freq );
+
+	
+	i2c_regs->control2 |= freq;   // 27M/270 =  100k hz
+
+
+	
+    i2c_regs->control0 &= (~I2C_CTL0_SLAVE_ADDR(I2C_CTL0_SLAVE_ADDR_MASK));
+     //i2c_regs->control0 |= I2C_CTL0_SLAVE_ADDR(t_addr);                        // set slave address
+    i2c_regs->control0 |= I2C_CTL0_SLAVE_ADDR(slave_addr);                        // set slave address	
+
+     //i2c_regs->control2 = I2C_CTL7_WRCOUNT(write_cnt) | I2C_CTL7_RDCOUNT(read_cnt);
+    i2c_regs->control7  = I2C_CTL7_WRCOUNT(len) | I2C_CTL7_RDCOUNT(0x00);     // set read writer count
+    i2c_regs->i2cm_mode &= (~(I2C_MODE_MANUAL_MODE | I2C_MODE_MANUAL_TRIG));   // Trigger mode  
+
+    i2c_regs->control0 &= (~(I2C_CTL0_PREFETCH | I2C_CTL0_RESTART_EN | I2C_CTL0_SUBADDR_EN));  // i2c write mode
+
+	sp_i2c_data_set(i2c_no, (unsigned int *)w_data);
+
+
+	
+	//printf("i2c_write09 \n");
+
+    i2c_regs->i2cm_mode |= I2C_MODE_MANUAL_TRIG;   // start Trigger 
+
+
+    i2c_regs->int_en0 = (int0 | I2C_EN0_CTL_EMPTY_THRESHOLD(I2C_EMPTY_THRESHOLD_VALUE));
+	i2c_regs->int_en1 = int1;
+	i2c_regs->int_en2 = int2;	
+
+
+}
+
+
+void sp_i2c_dma_irq_read(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned int len)
+
+{
+
+	unsigned int temp_reg;
+	unsigned int i,j,k;
+    unsigned int data_len = 0;	
+	unsigned int freq;		
+	unsigned int int0 = 0, int1 = 0, int2 = 0;
+
+	
+	I2C_MAS_REG * i2c_regs = (I2C_MAS_REG *)i2c_mas_ctlr[i2c_no].reg_adr;
+	I2C_MAS_DMA_REG * i2c_dma_regs = (I2C_MAS_DMA_REG *)i2c_mas_ctlr[i2c_no].dma_adr;	
+
+
+    i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+    //delay_1ms(1);
+
+	int0 = (I2C_EN0_SCL_HOLD_TOO_LONG_INT | I2C_EN0_EMPTY_INT | I2C_EN0_DATA_NACK_INT
+			| I2C_EN0_ADDRESS_NACK_INT | I2C_EN0_DONE_INT );	
+
+	int1 = I2C_BURST_RDATA_FLAG;
+	int2 = I2C_BURST_RDATA_ALL_FLAG;
+
+
+	i2c_mas_ctlr[i2c_no].buf = data_buf ;
+	i2c_mas_ctlr[i2c_no].BurstCount = len / I2C_BURST_RDATA_BYTES;
+	i2c_mas_ctlr[i2c_no].BurstRemainder = len % I2C_BURST_RDATA_BYTES;
+	i2c_mas_ctlr[i2c_no].DataIndex = 0;	
+	i2c_mas_ctlr[i2c_no].RegDataIndex = 0;
+    i2c_mas_ctlr[i2c_no].RWState = I2C_DMA_READ_STATE;
+    i2c_mas_ctlr[i2c_no].DataTotalLen = len;
+
+	i2c_regs->i2cm_mode |= I2C_MODE_DMA_MODE;  // enable DMA
+
+    i2c_regs->control0 &= (~I2C_CTL0_FREQ(I2C_CTL0_FREQ_MASK));
+
+	i2c_regs->control2 &= (~I2C_CTL2_FREQ_CUSTOM(I2C_CTL2_FREQ_CUSTOM_MASK));
+	freq = (I2C_FREQ / i2c_mas_ctlr[i2c_no].freq) - 1;
+	i2c_regs->control2 |= freq;   // 27M/270 =  100k hz
+
+
+	i2c_regs->control2 &= (~I2C_CTL2_SCL_DELAY(I2C_CTL2_SCL_DELAY_MASK));
+	i2c_regs->control2 |= I2C_CTL2_SCL_DELAY(0x01);
+    i2c_regs->control2 &= (~(I2C_CTL2_SDA_HALF_ENABLE));
+
+
+    i2c_regs->control0 &= (~I2C_CTL0_SLAVE_ADDR(I2C_CTL0_SLAVE_ADDR_MASK));
+    //i2c_regs->control0 |= I2C_CTL0_SLAVE_ADDR(t_addr);                        // set slave address
+    i2c_regs->control0 |= I2C_CTL0_SLAVE_ADDR(slave_addr);                        // set slave address	
+
+    i2c_regs->i2cm_mode &= (~(I2C_MODE_MANUAL_MODE | I2C_MODE_MANUAL_TRIG));   // clear mode  
+    i2c_regs->i2cm_mode |= I2C_MODE_MANUAL_MODE;                               //set AUTO mode
+
+    i2c_regs->control0 &= (~(I2C_CTL0_RESTART_EN | I2C_CTL0_SUBADDR_EN));
+    i2c_regs->control0 |= I2C_CTL0_PREFETCH;                                   // set read mode
+
+    i2c_regs->int_en0 = int0;
+    i2c_regs->int_en1 = int1;
+    i2c_regs->int_en2 = int2;
+
+	
+    if(len < 4)
+        i2c_dma_regs->dma_length = 4; 		
+    else
+        i2c_dma_regs->dma_length = len; 	
+
+
+     HAL_DCACHE_INVALIDATE(data_buf,len);   // cache data map to dram   
+
+    i2c_dma_regs->dma_addr = (unsigned int)data_buf;  
+    i2c_dma_regs->dma_config |= I2C_DMA_CFG_DMA_MODE;
+    i2c_dma_regs->int_en = I2C_DMA_EN_DMA_DONE_INT; 
+    i2c_dma_regs->dma_config |= I2C_DMA_CFG_DMA_GO;
+
+
+	//printf("dma_config 0x%x \n",i2c_dma_regs->dma_config);
+	//printf("i2cm_control2 0x%x \n",i2c_regs->control2);
+	//printf("i2cm_control0 0x%x \n",i2c_regs->control0);
+	//printf("i2cm_mode 0x%x \n",i2c_regs->i2cm_mode);
+	//printf("dma_addr 0x%x \n",i2c_dma_regs->dma_addr);		
+	//printf("dma_length 0x%x \n",i2c_dma_regs->dma_length);
+	//printf("int_flag 0x%x \n",i2c_regs->interrupt);
+	//printf("dma_int_flag 0x%x \n",i2c_dma_regs->int_flag);
+
+
+}
+
+
+
+
+void sp_i2c_dma_irq_write(unsigned int i2c_no, u8  slave_addr , u8  *data_buf , unsigned int len)
+
+{
+
+	unsigned int temp_reg;
+	unsigned int i=0,j,k;
+    unsigned int data_len = 0;
+	unsigned int freq;		
+	unsigned int int0 = 0, int1 = 0, int2 = 0;
+	unsigned int burst_cnt = 0;	
+
+	
+	I2C_MAS_REG * i2c_regs = (I2C_MAS_REG *)i2c_mas_ctlr[i2c_no].reg_adr;
+	I2C_MAS_DMA_REG * i2c_dma_regs = (I2C_MAS_DMA_REG *)i2c_mas_ctlr[i2c_no].dma_adr;	
+
+    i2c_regs->control0 |= I2C_CTL0_SW_RESET ;  // reset 
+    //delay_1ms(1);
+
+	//printf("data_buf0 = 0x%x, data_buf1 = 0x%x\n", data_buf[0], data_buf[1]);	
+	//printf("data_bufW00_addr:%x\n ",data_buf);
+	//printf("sp_i2c_write 0x%x 0x%x\n",i2c_regs,i2c_dma_regs);
+
+
+	int0 = (I2C_EN0_SCL_HOLD_TOO_LONG_INT | I2C_EN0_EMPTY_INT | I2C_EN0_DATA_NACK_INT
+			| I2C_EN0_ADDRESS_NACK_INT | I2C_EN0_DONE_INT );
+
+	if (burst_cnt)
+	    int0 |= I2C_EN0_EMPTY_THRESHOLD_INT;
+
+	i2c_mas_ctlr[i2c_no].buf = data_buf ;
+	i2c_mas_ctlr[i2c_no].RWState = I2C_DMA_WRITE_STATE;
+	i2c_mas_ctlr[i2c_no].BurstCount = burst_cnt;
+	i2c_mas_ctlr[i2c_no].DataIndex = i;
+	i2c_mas_ctlr[i2c_no].DataTotalLen = len;
+
+	i2c_regs->i2cm_mode |= I2C_MODE_DMA_MODE;  // enable DMA
+
+    i2c_regs->control0 &= (~I2C_CTL0_FREQ(I2C_CTL0_FREQ_MASK));
+
+	i2c_regs->control2 &= (~I2C_CTL2_FREQ_CUSTOM(I2C_CTL2_FREQ_CUSTOM_MASK));
+	freq = (I2C_FREQ / i2c_mas_ctlr[i2c_no].freq) - 1;
+	i2c_regs->control2 |= freq;   // 27M/270 =  100k hz
+	
+    i2c_regs->control0 &= (~I2C_CTL0_SLAVE_ADDR(I2C_CTL0_SLAVE_ADDR_MASK));
+     //i2c_regs->control0 |= I2C_CTL0_SLAVE_ADDR(t_addr);                        // set slave address
+    i2c_regs->control0 |= I2C_CTL0_SLAVE_ADDR(slave_addr);                        // set slave address	
+
+    i2c_regs->i2cm_mode &= (~(I2C_MODE_MANUAL_MODE | I2C_MODE_MANUAL_TRIG));
+	i2c_regs->i2cm_mode |= I2C_MODE_MANUAL_MODE;	// AUTO mode  
+
+    i2c_regs->control0 &= (~(I2C_CTL0_PREFETCH | I2C_CTL0_RESTART_EN | I2C_CTL0_SUBADDR_EN));  // i2c write mode
+
+    i2c_regs->int_en0 = int0 ;
+
+	HAL_DCACHE_FLUSH(data_buf,len);   // cache data map to dram
+
+    if(len < 4)
+        i2c_dma_regs->dma_length = 4; 		
+    else
+        i2c_dma_regs->dma_length = len; 	
+
+    i2c_dma_regs->dma_addr = (unsigned int) data_buf;  
+    i2c_dma_regs->dma_config &=~(I2C_DMA_CFG_DMA_MODE);
+    i2c_dma_regs->int_en = I2C_DMA_EN_DMA_DONE_INT; 
+    i2c_dma_regs->dma_config |= I2C_DMA_CFG_DMA_GO;
+
+
+
+	//printf("i2cm_control2 0x%x \n",i2c_regs->control2);
+	//printf("i2cm_control0 0x%x \n",i2c_regs->control0);
+	//printf("i2cm_mode 0x%x \n",i2c_regs->i2cm_mode);
+	//printf("dma_config 0x%x \n",i2c_dma_regs->dma_config);
+	//printf("dma_addr 0x%x \n",i2c_dma_regs->dma_addr);
+	//i2c_dma_regs->dma_config |= I2C_DMA_CFG_DMA_GO;
+	//printf("dma_length 0x%x \n",i2c_dma_regs->dma_length);	
+
+
+}
 
 
 
