@@ -18,7 +18,9 @@
 #include <stdarg.h>
 #include <string.h>
 #include <common_all.h>
-#include "drivers/sp_spi_nor.h"
+#if (SP_SPINOR_DMA)
+#include "cache.h"
+#endif
 
 UINT8 cmd_buf[CMD_BUF_LEN];
 static UINT32 cmd_len;
@@ -147,18 +149,18 @@ static void spi_readcmd_set(UINT8 cmd)
 	}
 }
 
-static int spi_flash_xfer_DMAread(struct sp_spi_nor_priv *priv,UINT8 *cmd, UINT32 cmd_len, void *data, UINT32 data_len)
+static int spi_flash_xfer_DMAread(UINT8 *cmd, UINT32 cmd_len, void *data, UINT32 data_len)
 {
 	UINT32 addr_temp = 0;
-	UINT8 *data_in = data;
+	UINT8 *data_in = (UINT8 *)data;
 	UINT32 time = 0;
 	UINT32 ctrl = 0;
 	UINT32 autocfg = 0;
 	UINT32 temp_len = 0;
 	int value = 0;
-	struct spinorbufdesc *desc_r = &priv->rchain;
-	ulong data_end;
+	UINT32 *data_end = (void *) dma_buff + CFG_BUFF_MAX;
 
+        memset(dma_buff, 0, CFG_BUFF_MAX);
 	diag_printf("%s\n",__FUNCTION__);
 	msg_printf("DMA read :data length 0x%x cmd_len 0x%x, cmd[0] 0x%x\n",data_len, cmd_len, cmd[0]);
 	while ((SPI_CTRL_REG->spi_auto_cfg & DMA_TRIGGER) ||  (SPI_CTRL_REG->spi_ctrl & SPI_CTRL_BUSY)) {
@@ -169,15 +171,11 @@ static int spi_flash_xfer_DMAread(struct sp_spi_nor_priv *priv,UINT8 *cmd, UINT3
 		}
 	}
 
-	data_end = desc_r->phys + CFG_BUFF_MAX;
-	msg_printf("data length %d buff size 0x%x\n",data_len, desc_r->size);
-
 	spi_readcmd_set(cmd[0]);
 
 	ctrl = SPI_CTRL_REG->spi_ctrl & (CLEAR_CUST_CMD & (~(1<<19)));
 	ctrl |= (READ | BYTE_0 | ADDR_0B);
 
-	//SPI_CTRL_REG->spi_page_addr = 0;
 	SPI_CTRL_REG->spi_data = 0;
 	if (cmd_len > 1) {
 		addr_temp = (cmd[1] << 16) | (cmd[2] << 8) | cmd[3];
@@ -202,8 +200,10 @@ static int spi_flash_xfer_DMAread(struct sp_spi_nor_priv *priv,UINT8 *cmd, UINT3
 		if (cmd[0] == 5)//need to check
 			value |= (1<<19);
 		SPI_CTRL_REG->spi_cfg[0] = value;
-
-		SPI_CTRL_REG->spi_mem_data_addr = desc_r->phys;
+                
+                HAL_DCACHE_INVALIDATE(dma_buff, CFG_BUFF_MAX);   // cache data map to dram 
+		//SPI_CTRL_REG->spi_mem_data_addr = desc_r->phys;
+		SPI_CTRL_REG->spi_mem_data_addr = (UINT32)dma_buff;
 		msg_printf("dma addr 0x%x\n", SPI_CTRL_REG->spi_mem_data_addr);
 		msg_printf("spi_auto_cfg  0x%x\n", SPI_CTRL_REG->spi_auto_cfg);
 
@@ -228,10 +228,8 @@ static int spi_flash_xfer_DMAread(struct sp_spi_nor_priv *priv,UINT8 *cmd, UINT3
 				break;
 			}
 		}
-
-		/* Invalidate received data */
-		invalidate_dcache_range(rounddown(desc_r->phys, ARCH_DMA_MINALIGN), roundup(data_end,ARCH_DMA_MINALIGN));
-		memcpy(data_in, (void *)desc_r->phys, temp_len);
+		
+		memcpy(data_in, dma_buff, temp_len);
 		addr_temp += CFG_BUFF_MAX;
 		data_in += CFG_BUFF_MAX;
 	} while (data_len != 0);
@@ -242,7 +240,7 @@ static int spi_flash_xfer_DMAread(struct sp_spi_nor_priv *priv,UINT8 *cmd, UINT3
 	return 0;
 }
 
-static int spi_flash_xfer_DMAwrite(struct sp_spi_nor_priv *priv, UINT8 *cmd, UINT32 cmd_len, const void *data, UINT32 data_len)
+static int spi_flash_xfer_DMAwrite(UINT8 *cmd, UINT32 cmd_len, const void *data, UINT32 data_len)
 {
 	UINT32 temp_len = data_len;
 	UINT32 addr_temp = 0;
@@ -251,10 +249,10 @@ static int spi_flash_xfer_DMAwrite(struct sp_spi_nor_priv *priv, UINT8 *cmd, UIN
 	UINT32 ctrl = 0;
 	UINT32 autocfg = 0;
 	int value = 0;
-	struct spinorbufdesc *desc_w = &priv->wchain;
+	
+	UINT32 *data_end = (void *)dma_buff + CFG_BUFF_MAX;
 
-	ulong data_end = desc_w->phys + roundup(CFG_BUFF_MAX, ARCH_DMA_MINALIGN);
-
+        memset(dma_buff, 0, CFG_BUFF_MAX);
 	diag_printf("%s\n",__FUNCTION__);
 	msg_printf("DMA write : wdata length %d, cmd 0x%x\n",data_len, cmd[0]);
 
@@ -292,15 +290,16 @@ static int spi_flash_xfer_DMAwrite(struct sp_spi_nor_priv *priv, UINT8 *cmd, UIN
 		}
 
 		if (temp_len > 0) {
-			memcpy((void *)desc_w->phys, data_in, temp_len); // copy data to dma
-			/* Flush data to be sent */
-			flush_dcache_range(desc_w->phys, data_end);
+			//memcpy((void *)desc_w->phys, data_in, temp_len); // copy data to dma
+			memcpy(dma_buff, data_in, temp_len); // copy data to dma
 		}
 
 		value =  SPI_CTRL_REG->spi_cfg[0];
 		SPI_CTRL_REG->spi_cfg[0] = (value & CLEAR_DATA64_LEN) | temp_len;//| DATA64_EN;
-
-		SPI_CTRL_REG->spi_mem_data_addr = desc_w->phys;
+		
+                HAL_DCACHE_FLUSH(dma_buff, CFG_BUFF_MAX);   // cache data map to dram
+		//SPI_CTRL_REG->spi_mem_data_addr = desc_w->phys;
+		SPI_CTRL_REG->spi_mem_data_addr = (UINT32)dma_buff;
 
 		autocfg = DMA_TRIGGER | (cmd[0]<<8) | (1);
 		value = (SPI_CTRL_REG->spi_auto_cfg & (~(0xff<<8))) | autocfg;
@@ -722,11 +721,6 @@ static int sp_spi_nor_readID(void)
 }
 int sp_spi_nor_xfer(unsigned int bitlen, const void *dout, void *din, unsigned long flags)
 {
-#if (SP_SPINOR_DMA)
-	struct udevice *bus = dev->parent;
-	//struct sp_spi_nor_platdata *pdata = dev_get_platdata(bus);
-	struct sp_spi_nor_priv *priv = dev_get_priv(bus);
-#endif
 	unsigned int len;
 	int flc = 0;
 
@@ -762,7 +756,7 @@ int sp_spi_nor_xfer(unsigned int bitlen, const void *dout, void *din, unsigned l
 		if (cmd_buf[0] == 0x0B)
 			cmd_buf[0] = 0xEB;
 
-		spi_flash_xfer_DMAread(priv, cmd_buf, cmd_len, din, len);
+		spi_flash_xfer_DMAread(cmd_buf, cmd_len, din, len);
 #else
 		spi_flash_xfer_read(cmd_buf, cmd_len, din, len);
 #endif
@@ -776,9 +770,9 @@ int sp_spi_nor_xfer(unsigned int bitlen, const void *dout, void *din, unsigned l
 
 		msg_printf("write\n");
 		if (flc == 1)
-			spi_flash_xfer_DMAwrite(priv, cmd_buf, cmd_len, NULL, 0);
+			spi_flash_xfer_DMAwrite(cmd_buf, cmd_len, NULL, 0);
 		else
-			spi_flash_xfer_DMAwrite(priv, cmd_buf, cmd_len, dout, len);
+			spi_flash_xfer_DMAwrite(cmd_buf, cmd_len, dout, len);
 #else
 		msg_printf("write\n");
 		if (flc == 1)
@@ -792,24 +786,6 @@ out:
 	return 0;
 }
 
-#if 0
-static int sp_spi_nor_set_speed(struct udevice *bus, uint speed)
-{
-	struct sp_spi_nor_platdata *plat = bus->platdata;
-	struct sp_spi_nor_priv *priv = dev_get_priv(bus);
-
-	diag_printf("%s %d\n",__FUNCTION__, speed);
-
-	if (speed > plat->clock)
-		speed = plat->clock;
-
-	//set spi nor clock
-	priv->clock = speed;
-	printf("%s: regs=%p, speed=%d\n", __func__, priv->regs, priv->clock);
-
-	return 0;
-}
-#endif
 void sp_spi_nor_init()
 {	
 	diag_printf("## %s \n", __FUNCTION__);

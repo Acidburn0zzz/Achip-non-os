@@ -171,7 +171,7 @@ struct spi_ctrl_regs {
 	unsigned int spi_buf_addr;   // 22.10
 	unsigned int spi_status_2;    // 22.11
 	unsigned int spi_err_status; // 22.12
-	unsigned int spi_data_addr;  // 22.13
+	unsigned int spi_mem_data_addr;// 22.13
 	unsigned int mem_parity_addr;// 22.14
 	unsigned int spi_col_addr;   // 22.15
 	unsigned int spi_bch;        // 22.16
