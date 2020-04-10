@@ -1,3 +1,6 @@
 *~
 *.bak
 *.o
+bin/
+rom.ld
+.vscode/
