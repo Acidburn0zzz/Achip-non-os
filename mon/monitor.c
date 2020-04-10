@@ -112,6 +112,272 @@ static void _wreg(int argc, char *argv[])
 	wreg_r(group , index, value);
 }
 
+#ifdef SPI_TEST
+
+static void _spi_test(int argc, char *argv[])
+{
+	u8	rx_buf[255];
+	u8	tx_buf[255];
+	unsigned int test;
+
+	
+
+	sp_spi_master_set_freq_mode(0, 5000000 ,3);      // set clk to 100kHz
+
+
+
+	tx_buf[0] = 0x00;
+	sp_spi_master_fd_write(0, tx_buf,1);
+
+
+	sp_spi_master_fd_read(0, rx_buf,1);
+
+
+	printf("ADXL345 ID :0x%x\n ",rx_buf[0]);
+
+	tx_buf[0] = 0x2D;
+	tx_buf[1] = 0x0A;	
+	sp_spi_master_fd_write(0, tx_buf ,2);
+
+
+	printf("check power\n ");
+
+
+	tx_buf[0] = 0x32;
+	sp_spi_master_fd_read_write(0, tx_buf,rx_buf ,2, 1);
+	printf("data0 :0x%x\n ",rx_buf[0]);
+
+	tx_buf[0] = 0x33;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[1] ,2, 1);
+	printf("data1 :0x%x\n ",rx_buf[1]);
+
+
+	tx_buf[0] = 0x34;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[2] ,2, 1);
+	printf("data2 :0x%x\n ",rx_buf[2]);
+
+	tx_buf[0] = 0x35;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[3] ,2, 1);
+	printf("data3 :0x%x\n ",rx_buf[3]);
+
+
+	tx_buf[0] = 0x36;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[4] ,2, 1);
+	printf("data4 :0x%x\n ",rx_buf[4]);
+
+	tx_buf[0] = 0x37;
+	sp_spi_master_fd_read_write(0, tx_buf,&rx_buf[5] ,2, 1);
+	printf("data5 :0x%x\n ",rx_buf[5]);
+
+
+	test = rx_buf[0]<<8 | rx_buf[1];
+
+	printf("ACCE_X:%d\n ",test);
+
+	test = rx_buf[2]<<8 | rx_buf[3];
+
+	printf("ACCE_Y:%d\n ",test);	
+
+	test = rx_buf[4]<<8 | rx_buf[5];
+
+	printf("ACCE_Z:%d\n ",test);
+
+
+	
+}
+
+#endif
+
+#ifdef I2C_TEST
+
+static void _i2c_test(int argc, char *argv[])
+{
+	u8	rx_buf[255];
+	u8	tx_buf[255];
+	unsigned int test;
+
+
+#if(0)
+
+	u8	data_buf[255];
+
+	tx_buf[0] = 0x6B;
+	tx_buf[1] = 0X00;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 2);
+
+	tx_buf[0] = 0x19;
+	tx_buf[1] = 0X07;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+	tx_buf[0] = 0x1A;
+	tx_buf[1] = 0X06;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+	tx_buf[0] = 0x1C;
+	tx_buf[1] = 0X01;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+
+	tx_buf[0] = 0x3B;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);
+	sp_i2c_read(0, 0x68 , &data_buf[0] , 1);
+	//printf("data_buf0:%lx\n ",data_buf[0]);
+	//printf("data_bufR0_addr:%lx\n ",&data_buf[0]);
+
+	tx_buf[0] = 0x3C;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);	
+	sp_i2c_read(0, 0x68 , &data_buf[1] , 1);
+	//printf("data_buf1:%x\n ",data_buf[1]);	
+	//printf("data_bufR1_addr:%x\n ",&data_buf[1]);
+
+
+	test = data_buf[0]<<8 | data_buf[1];
+
+	printf("ACCE_X:%d\n ",test);
+
+
+	tx_buf[0] = 0x3D;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);
+	sp_i2c_read(0, 0x68 , &data_buf[0] , 1);
+	//printf("data_buf0:%lx\n ",data_buf[0]);
+	//printf("data_bufR0_addr:%lx\n ",&data_buf[0]);
+
+	tx_buf[0] = 0x3E;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);	
+	sp_i2c_read(0, 0x68 , &data_buf[1] , 1);
+	//printf("data_buf1:%x\n ",data_buf[1]);	
+	//printf("data_bufR1_addr:%x\n ",&data_buf[1]);
+
+
+	test = data_buf[0]<<8 | data_buf[1];
+
+	printf("ACCE_Y:%d\n ",test);
+
+
+	tx_buf[0] = 0x3F;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);
+	sp_i2c_read(0, 0x68 , &data_buf[0] , 1);
+	//printf("data_buf0:%lx\n ",data_buf[0]);
+	//printf("data_bufR0_addr:%lx\n ",&data_buf[0]);
+
+	tx_buf[0] = 0x40;
+	sp_i2c_write(0, 0x68 , &tx_buf[0] , 1);	
+	sp_i2c_read(0, 0x68 , &data_buf[1] , 1);
+	//printf("data_buf1:%x\n ",data_buf[1]);	
+	//printf("data_bufR1_addr:%x\n ",&data_buf[1]);
+
+
+	test = data_buf[0]<<8 | data_buf[1];
+
+	printf("ACCE_Z:%d\n ",test);
+
+
+
+#endif
+
+
+
+
+#if(1)
+
+
+	tx_buf[0] = 0x6B;
+	tx_buf[1] = 0X00;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 2);
+
+	while(i2c_check(0))
+	{
+		}	
+
+	tx_buf[0] = 0x19;
+	tx_buf[1] = 0X07;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+	while(i2c_check(0))
+	{
+		}
+
+
+	tx_buf[0] = 0x1A;
+	tx_buf[1] = 0X06;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 2);
+
+
+	while(i2c_check(0))
+	{
+		}
+
+
+	tx_buf[0] = 0x1C;
+	tx_buf[1] = 0X01;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 2);
+
+	while(i2c_check(0))
+	{
+		}
+
+
+
+	tx_buf[0] = 0x3B;
+	//sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 1);
+	//sp_i2c_irq_read(0, 0x68 , &rx_buf[0] , 1);
+
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 1);
+
+	//printf("i2c00 !!\n");
+
+
+	while(i2c_check(0))
+	{
+		}
+
+
+	sp_i2c_irq_read(0, 0x68 , &rx_buf[0] , 1);
+
+
+	while(i2c_check(0))
+	{
+		}
+
+	printf("data_buf0:%lx\n ",rx_buf[0]);
+
+
+
+	tx_buf[0] = 0x3C;
+	sp_i2c_irq_write(0, 0x68 , &tx_buf[0] , 1);	
+
+	while(i2c_check(0))
+	{
+		}
+
+
+	sp_i2c_irq_read(0, 0x68 , &rx_buf[1] , 1);
+
+
+	while(i2c_check(0))
+	{
+		}
+	
+	printf("data_buf1:%lx\n ",rx_buf[1]);
+
+
+
+
+	//sp_i2c_dma_irq_read(0, 0x68 , &rx_buf[0] , 1);
+
+
+	//sp_spi_master_fd_read_write_irq(0, &tx_buf[0], &rx_buf[0],60, 2 );
+
+#endif
+	
+}
+
+#endif
+
 
 #ifdef NOC_TEST
 
@@ -264,6 +530,360 @@ void _axi(int argc, char *argv[])
 }
 #endif
 
+#ifdef DISP_TEST
+extern void run_disp_init_cmd(int is_hdmi, int width, int height);
+extern void run_colorbar_cmd(int sel, int en);
+extern void run_fetch_data_cmd(int disp_path, int input_fmt);
+extern void run_draw_init_cmd(int disp_path, int input_fmt);
+extern void run_draw_pixel_cmd(int test);
+extern void run_draw_line_cmd(int test);
+extern void run_draw_font_cmd(int test);
+extern void run_draw_clean_cmd(int test);
+static void _disp(int argc, char *argv[])
+{
+	char *cmd, *para1, *para2, *para3;
+	unsigned int cmd_len, para1_len, para2_len, para3_len;
+	unsigned int value, value1, value2, value3;
+
+	cmd_len = 0;
+	para1_len = 0;
+	para2_len = 0;
+	para3_len = 0;
+	value = 0;
+	value1 = 0;
+	value2 = 0;
+	value3 = 0;
+
+	if (argc >= 1) {
+		cmd = argv[0];
+		para1 = argv[1];
+		para2 = argv[2];
+		para3 = argv[3];
+		cmd_len = _strlen(cmd);
+		para1_len = _strlen(para1);
+		para2_len = _strlen(para2);
+		para3_len = _strlen(para3);
+		mon_readhex(argv[0], &value);
+		mon_readhex(argv[1], &value1);
+		mon_readhex(argv[2], &value2);
+		mon_readhex(argv[3], &value3);
+		printf("/********************************************************/ \n");
+		printf("/* disp command list                                    */ \n");
+		printf("/* disp init ttl xx xx --- initial display function.    */ \n");
+		printf("/* disp init hdmi xx xx --- initial display function.   */ \n");
+		printf("/* disp color --- Bulit-In-Self-Test.                   */ \n");
+		printf("/* disp color dve   xx (xx=dis/en).                     */ \n");
+		printf("/* disp color dmix  xx (xx=dis/en/hor/bor/snow).        */ \n");
+		printf("/* disp color vpp0  xx (xx=dis/en).                     */ \n");
+		printf("/* disp color ddfch xx (xx=dis/en/half1/half2).         */ \n");
+		printf("/* disp color osd0  xx (xx=dis/en/bor).                 */ \n");
+		printf("/* disp color hdmitx xx (xx=dis/en).                    */ \n");
+		printf("/* disp fetch ddfch xx (xx=en/nv12/nv16/yuy2).          */ \n");
+		printf("/* disp fetch osd0 xx (xx=en/8bpp/yuy2/argb8888).       */ \n");
+		printf("/* disp draw init xx (xx=8bpp/rgb565/argb8888).         */ \n");
+		printf("/* disp draw pixel xx (xx=test1/test2/test3).           */ \n");
+		printf("/* disp draw line xx (xx=test1/test2/test3).            */ \n");
+		printf("/* disp draw font xx (xx=test1/test2).                  */ \n");
+		printf("/* disp draw clean xx (xx=test1/test2/test3).           */ \n");
+		printf("/********************************************************/ \n");
+	}
+	else {
+		printf("help\n");
+		printf("cmd %d, para1 %d, para2 %d , para3 %d \n",cmd_len,para1_len,para2_len,para3_len);
+		printf("cmd %d, para1 %d, para2 %d , para3 %d \n",value,value1,value2,value3);		
+	}
+
+	if (_strncmp(cmd, "init", cmd_len) == 0) {
+		//printf("run init command.\n");
+
+		if (_strncmp(para1, "ttl", para1_len) == 0) {
+			printf("run init ttl command.\n");
+			value1 = 0;
+		}
+		else if (_strncmp(para1, "hdmi", para1_len) == 0) {
+			printf("run init hdmi command.\n");
+			value1 = 1;
+		}
+		if((value2 < 0) || (value2 > 2000))
+			value2 = 720;
+		if((value3 < 0) || (value3 > 2000))
+			value2 = 480;
+		run_disp_init_cmd(value1, value2, value3);
+
+	} else if (_strncmp(cmd, "color", cmd_len) == 0) {
+		//printf("run color bar command.\n");
+		if (_strncmp(para1, "dve", para1_len) == 0) {
+			//printf("run dve color bar command.\n");
+			value1 = 0;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run dve color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run dve color bar [dis].\n");
+			}
+		}
+		else if (_strncmp(para1, "dmix", para1_len) == 0) {
+			//printf("run dmix color bar command.\n");
+			value1 = 1;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run dmix color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run dmix color bar [dis].\n");
+			}
+			else if (_strncmp(para2, "hor", para2_len) == 0) {
+				value2 = 2;
+				printf("run dmix color bar [hor].\n");
+			}
+			else if (_strncmp(para2, "bor", para2_len) == 0) {
+				value2 = 3;
+				printf("run dmix color bar [bor].\n");
+			}
+			else if (_strncmp(para2, "snow", para2_len) == 0) {
+				value2 = 4;
+				printf("run dmix color bar [snow].\n");
+			}
+		}
+		else if (_strncmp(para1, "vpp0", para1_len) == 0) {
+			//printf("run vpp0 color bar command.\n");
+			value1 = 2;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run vpp0 color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run vpp0 color bar [dis].\n");
+			}
+		}
+		else if (_strncmp(para1, "ddfch", para1_len) == 0) {
+			//printf("run ddfch color bar command.\n");
+			value1 = 3;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run ddfch color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run ddfch color bar [dis].\n");
+			}
+			else if (_strncmp(para2, "half1", para2_len) == 0) {
+				value2 = 2;
+				printf("run ddfch color bar [half1].\n");
+			}
+			else if (_strncmp(para2, "half2", para2_len) == 0) {
+				value2 = 3;
+				printf("run ddfch color bar [half2].\n");
+			}
+		}
+		else if (_strncmp(para1, "osd0", para1_len) == 0) {
+			//printf("run osd0 color bar command.\n");
+			value1 = 4;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run osd0 color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run osd0 color bar [dis].\n");
+			}
+			else if (_strncmp(para2, "bor", para2_len) == 0) {
+				value2 = 2;
+				printf("run osd0 color bar [bor].\n");
+			}
+		}
+		else if (_strncmp(para1, "hdmitx", para1_len) == 0) {
+			//printf("run hdmitx color bar command.\n");
+			value1 = 5;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 1;
+				printf("run hdmitx color bar [en].\n");
+			}
+			else if (_strncmp(para2, "dis", para2_len) == 0) {
+				value2 = 0;
+				printf("run hdmitx color bar [dis].\n");
+			}
+		}
+		run_colorbar_cmd(value1,value2);
+	} else if (_strncmp(cmd, "fetch", cmd_len) == 0) {
+		printf("run fetch command.\n");
+		if (_strncmp(para1, "ddfch", para1_len) == 0) {
+			//printf("run fetch ddfch command.\n");
+			value1 = 0;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 2;
+				printf("run fetch ddfch [en].\n");
+			}			
+			else if (_strncmp(para2, "nv12", para2_len) == 0) {
+				value2 = 0;
+				printf("run fetch ddfch [nv12].\n");
+			}
+			else if (_strncmp(para2, "nv16", para2_len) == 0) {
+				value2 = 1;
+				printf("run fetch ddfch [nv16].\n");
+			}
+			else if (_strncmp(para2, "yuy2", para2_len) == 0) {
+				value2 = 2;
+				printf("run fetch ddfch [yuy2].\n");
+			}
+		}
+		else if (_strncmp(para1, "osd0", para1_len) == 0) {
+			//printf("run fetch osd0 command.\n");
+			value1 = 1;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 4;
+				printf("run fetch osd0 [en].\n");
+			}			
+			else if (_strncmp(para2, "8bpp", para2_len) == 0) {
+				value2 = 2;
+				printf("run fetch osd0 [8bpp].\n");
+			}
+			else if (_strncmp(para2, "yuy2", para2_len) == 0) {
+				value2 = 4;
+				printf("run fetch osd0 [yuy2].\n");
+			}
+			else if (_strncmp(para2, "rgb565", para2_len) == 0) {
+				value2 = 8;
+				printf("run fetch osd0 [rgb565].\n");
+			}
+			else if (_strncmp(para2, "argb1555", para2_len) == 0) {
+				value2 = 9;
+				printf("run fetch osd0 [argb1555].\n");
+			}
+			else if (_strncmp(para2, "rgba4444", para2_len) == 0) {
+				value2 = 10;
+				printf("run fetch osd0 [rgba4444].\n");
+			}
+			else if (_strncmp(para2, "argb4444", para2_len) == 0) {
+				value2 = 11;
+				printf("run fetch osd0 [argb4444].\n");
+			}
+			else if (_strncmp(para2, "rgba8888", para2_len) == 0) {
+				value2 = 13;
+				printf("run fetch osd0 [rgba8888].\n");
+			}
+			else if (_strncmp(para2, "argb8888", para2_len) == 0) {
+				value2 = 14;
+				printf("run fetch osd0 [argb8888].\n");
+			}
+		}
+		run_fetch_data_cmd(value1,value2);
+	} else if (_strncmp(cmd, "draw", cmd_len) == 0) {
+		printf("run draw command.\n");
+		if (_strncmp(para1, "init", para1_len) == 0) {
+			//printf("run draw init command.\n");
+			value1 = 1;
+			if (_strncmp(para2, "en", para2_len) == 0) {
+				value2 = 2;
+				printf("run draw init osd0 [8bpp].\n");
+			}			
+			else if (_strncmp(para2, "8bpp", para2_len) == 0) {
+				value2 = 2;
+				printf("run draw init osd0 [8bpp].\n");
+			}
+			else if (_strncmp(para2, "yuy2", para2_len) == 0) {
+				value2 = 4;
+				printf("run draw init osd0 [yuy2].\n");
+			}
+			else if (_strncmp(para2, "rgb565", para2_len) == 0) {
+				value2 = 8;
+				printf("run draw init osd0 [rgb565].\n");
+			}
+			else if (_strncmp(para2, "argb1555", para2_len) == 0) {
+				value2 = 9;
+				printf("run draw init osd0 [argb1555].\n");
+			}
+			else if (_strncmp(para2, "rgba4444", para2_len) == 0) {
+				value2 = 10;
+				printf("run draw init osd0 [rgba4444].\n");
+			}
+			else if (_strncmp(para2, "argb4444", para2_len) == 0) {
+				value2 = 11;
+				printf("run draw init osd0 [argb4444].\n");
+			}
+			else if (_strncmp(para2, "rgba8888", para2_len) == 0) {
+				value2 = 13;
+				printf("run draw init osd0 [rgba8888].\n");
+			}
+			else if (_strncmp(para2, "argb8888", para2_len) == 0) {
+				value2 = 14;
+				printf("run draw init osd0 [argb8888].\n");
+			}
+			run_draw_init_cmd(value1,value2);
+		}
+		else if (_strncmp(para1, "pixel", para1_len) == 0) {
+			//printf("run draw pixel command.\n");
+			if (_strncmp(para2, "test1", para2_len) == 0) {
+				value1 = 0;
+				printf("run draw pixel osd0 [test1].\n");
+			}
+			else if (_strncmp(para2, "test2", para2_len) == 0) {
+				value1 = 1;
+				printf("run draw pixel osd0 [test2].\n");
+			}
+			else if (_strncmp(para2, "test3", para2_len) == 0) {
+				value1 = 2;
+				printf("run draw pixel osd0 [test3].\n");
+			}
+			run_draw_pixel_cmd(value1);
+		}
+		else if (_strncmp(para1, "line", para1_len) == 0) {
+			//printf("run draw line command.\n");
+			if (_strncmp(para2, "test1", para2_len) == 0) {
+				value1 = 0;
+				printf("run draw line osd0 [test1].\n");
+			}
+			else if (_strncmp(para2, "test2", para2_len) == 0) {
+				value1 = 1;
+				printf("run draw line osd0 [test2].\n");
+			}
+			else if (_strncmp(para2, "test3", para2_len) == 0) {
+				value1 = 2;
+				printf("run draw line osd0 [test3].\n");
+			}
+			run_draw_line_cmd(value1);
+		}
+		else if (_strncmp(para1, "font", para1_len) == 0) {
+			//printf("run draw font command.\n");
+			if (_strncmp(para2, "test1", para2_len) == 0) {
+				value1 = 0;
+				printf("run draw font osd0 [test1].\n");
+			}
+			else if (_strncmp(para2, "test2", para2_len) == 0) {
+				value1 = 1;
+				printf("run draw font osd0 [test2].\n");
+			}
+			run_draw_font_cmd(value1);
+		}
+		else if (_strncmp(para1, "clean", para1_len) == 0) {
+			//printf("run draw clean command.\n");
+			if (_strncmp(para2, "test1", para2_len) == 0) {
+				value1 = 0;
+				printf("run draw clean osd0 [test1].\n");
+			}
+			else if (_strncmp(para2, "test2", para2_len) == 0) {
+				value1 = 1;
+				printf("run draw clean osd0 [test2].\n");
+			}
+			else if (_strncmp(para2, "test3", para2_len) == 0) {
+				value1 = 2;
+				printf("run draw clean osd0 [test3].\n");
+			}
+			run_draw_clean_cmd(value1);
+		}
+	} else {
+		printf("Unknown command.\n");
+	}
+
+	//printf("disp function test \n");
+}
+#endif
+
+
 static CMD_LIST cmd_list[] =
 {
 	{"lreg",      _lreg,                "Read Register."},
@@ -282,7 +902,25 @@ static CMD_LIST cmd_list[] =
 #ifdef QCH_TEST
 	{"qch",       _qchannel,            "q channel verification."},
 #endif
+#ifdef DISP_TEST
+	{"disp",       _disp,                 "For display function"},
+#endif
+#ifdef RS485_TEST
+	{"485w",      _RS485_write,        "RS485 write."},
+    {"485r",	   _RS485_read,		    "RS485 read."},
+#endif
+#ifdef SPI_NOR_TEST
+        {"sf",		FlashCommand,      "spi nor command"},
+#endif 
 
+#ifdef SPI_TEST
+	{"spi",      _spi_test,        "spi test."},
+#endif 
+
+
+#ifdef I2C_TEST
+	{"i2c",      _i2c_test,        "i2c test."},
+#endif 
 };
 
 

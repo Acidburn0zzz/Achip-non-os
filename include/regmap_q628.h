@@ -48,6 +48,11 @@ struct moon5_regs {
 };
 #define MOON5_REG ((volatile struct moon5_regs *)RF_GRP(5, 0))
 
+struct gpioxt6_regs {
+	unsigned int sft_cfg[32];
+};
+#define GPIOXT6_REG ((volatile struct gpioxt6_regs *)RF_GRP(6, 0))
+
 struct pad_ctl_regs {
         unsigned int reserved[20];         // 101.0
         unsigned int spi_flash_sftpad_ctl; // 101.20
@@ -164,9 +169,9 @@ struct spi_ctrl_regs {
 	unsigned int spi_cfg[3];     // 22.6
 	unsigned int spi_data_64;    // 22.9
 	unsigned int spi_buf_addr;   // 22.10
-	unsigned int spi_statu_2;    // 22.11
+	unsigned int spi_status_2;    // 22.11
 	unsigned int spi_err_status; // 22.12
-	unsigned int spi_data_addr;  // 22.13
+	unsigned int spi_mem_data_addr;// 22.13
 	unsigned int mem_parity_addr;// 22.14
 	unsigned int spi_col_addr;   // 22.15
 	unsigned int spi_bch;        // 22.16

@@ -38,4 +38,5 @@ char linebuf[300];
 	do { psprintf(linebuf, ## s); io_write_wait(linebuf); } while (0)
 
 
+
 #endif /* _EMUIO_H_ */

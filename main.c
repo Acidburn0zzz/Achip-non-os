@@ -6,6 +6,15 @@
 #include "common_all.h"
 #include "cache.h"
 
+#ifdef SPI_NOR_TEST
+#if (SP_SPINOR_DMA)
+u8 dma_buff[CFG_BUFF_MAX];
+#endif
+#endif
+#ifdef DISP_TEST
+extern void disp_initial_settings();
+#endif
+
 #ifdef NOC_TEST
 // #include "display_pattern_384x240_nv12.inc"
 extern void noc_initial_settings();
@@ -51,6 +60,9 @@ void gpio_intr_test_init()
 }
 #endif
 
+
+
+
 void hw_init()
 {
 	unsigned int i;
@@ -88,6 +100,11 @@ int main(void)
 	mmu_init();
 	HAL_DCACHE_ENABLE();
 
+#ifdef DISP_TEST
+	//disp_initial_settings();
+#endif
+
+
 
 #ifdef NOC_TEST
 	noc_initial_settings();
@@ -106,6 +123,22 @@ int main(void)
 #ifdef INTR_SAMPLE
 	gpio_intr_test_init();
 #endif
+
+#ifdef RS485_TEST
+	rs485_init(10,11);	//G_MX[10]_TX --> DI, G_MX[11]_RX --> RO 
+#endif 
+
+#ifdef SPI_TEST
+  	sp_spi_master_fd_init();
+	//spi_irq_init(0);
+#endif
+
+#ifdef I2C_TEST
+	sp_i2c_master_init();
+	sp_i2c_master_set_freq_khz(0, 100);      // set clk to 100kHz
+        //i2c_irq_init(0);
+#endif
+
 	/* interrupt manager module init */
 	sp_interrupt_setup();
 

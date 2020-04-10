@@ -1,7 +1,7 @@
 COMMON_DIR = common
 LIB = lib
 TESTAPI = testapi
-
+MAKE = make
 CROSS = ../../crossgcc/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
 
 BIN = bin
@@ -15,7 +15,7 @@ LDFLAGS_COM  = -L $(shell dirname `$(CROSS)gcc -print-libgcc-file-name`) -lgcc
 CFLAGS += -fno-builtin
 CFLAGS += -nodefaultlibs
 CFALGS += -ffunction-sections -fdata-sections -flto
-CFLAGS += -Wall -march=armv7-a -marm -Wno-unused-function -Wno-unused-variable -Wno-implicit-function-declaration
+CFLAGS += -Wall -march=armv7-a -marm -Wno-unused-function -Wno-unused-variable -Wno-implicit-function-declaration -Wno-misleading-indentation
 CFLAGS += -Iinclude -Iinclude/util -I$(TESTAPI)/qch -g
 
 #-mthumb -mthumb-interwork
@@ -40,6 +40,38 @@ CSOURCES += mon/monitor.c
 CSOURCES += $(TESTAPI)/interrupt/sp_interrupt.c
 ASOURCES += $(TESTAPI)/interrupt/vectors.S
 
+# DISP_TEST = ENABLE
+ifeq "$(DISP_TEST)" "ENABLE"
+	CFLAGS += -DDISP_TEST
+	# disp test
+	DISP_PATH = $(TESTAPI)/drivers/disp
+	CSOURCES += $(wildcard $(DISP_PATH)/*.c)
+endif
+
+# I2C_TEST = ENABLE
+ifeq "$(I2C_TEST)" "ENABLE"
+	CFLAGS += -DI2C_TEST
+	# i2c test
+	I2C_PATH = drivers/i2c
+	CSOURCES += $(wildcard $(I2C_PATH)/*.c)
+endif
+
+#SPI_TEST = ENABLE
+ifeq "$(SPI_TEST)" "ENABLE"
+	CFLAGS += -DSPI_TEST
+	# i2c test
+	SPI_PATH = drivers/spi
+	CSOURCES += $(wildcard $(SPI_PATH)/*.c)
+endif
+
+
+#SPI_NOR_TEST = ENABLE
+ifeq "$(SPI_NOR_TEST)" "ENABLE"
+        CFLAGS += -DSPI_NOR_TEST
+        # spi nor test
+        SPINOR_PATH = drivers/spinor
+        CSOURCES += $(wildcard $(SPINOR_PATH)/*.c)
+endif
 
 # NOC_TEST = ENABLE
 ifeq "$(NOC_TEST)" "ENABLE"
@@ -64,14 +96,24 @@ ifeq "$(AXI_MON)" "ENABLE"
 	CSOURCES += $(wildcard $(TEST_AXI_MON)/*.c)
 endif
 
+#RS485_TEST = ENABLE
+ifeq "$(RS485_TEST)" "ENABLE"
+	CFLAGS += -DRS485_TEST
+	# rs485 test
+	RS485_PATH = drivers/rs485
+	CSOURCES += $(wildcard $(RS485_PATH)/*.c)
+endif
+
 OBJS = $(ASOURCES:.S=.o) $(CSOURCES:.c=.o)
 
 
 .PHONY: clean all
 
-all: clean $(TARGET) pack
-	dd if=../../boot/xboot/bin/xboot.img of=bin/out.bin bs=1k seek=64
-	dd if=bin/rom.img of=bin/out.bin bs=1k seek=256
+all: clean $(TARGET) ISP pack 
+	dd if=prebuilt/xboot_nor.img of=bin/spi_all.bin bs=1k seek=64
+	dd if=bin/rom.img of=bin/spi_all.bin bs=1k seek=256
+	dd if=bin/rom.img of=bin/out.bin 
+	@cd out && ./isp.sh
 
 $(TARGET): $(OBJS)
 	@$(CROSS)cpp -P $(CFLAGS) $(LD_SRC) $(LD_FILE)
@@ -84,6 +126,13 @@ pack:
 	@echo "Wrap code image..."
 	@bash ./script/add_uhdr.sh uboot $(BIN)/$(TARGET).bin $(BIN)/$(TARGET).img 0x200040 0x200040
 	@sz=`du -sb bin/$(TARGET).img|cut -f1`;	printf "rom size = %d (hex %x)\n" $$sz $$sz
+
+ISP:
+	@echo "isp..."
+	@rm -rf out
+	@mkdir -p out
+	@ln ./isp/isp.sh ./out/isp.sh
+	@$(MAKE) -C ./isp
 
 #testapi/qch/iop.o: testapi/qch/DQ8051.bin
 %.o: %.S
@@ -114,6 +163,7 @@ clean:
 	@-rm -f $(OBJS) >/dev/null
 	@-cd $(BIN); rm -f $(TARGET) $(TARGET).bin $(SPI_ALL).bin $(TARGET).map $(TARGET).dis $(TARGET).img >/dev/null
 	@-rm -f bin/out.bin $(LD_FILE) >/dev/null
+	@-rm -f isp/*.o isp/isp
 
 
 p-%:
