@@ -1,4 +1,4 @@
-DIRS= flash  gpio spi i2c
+DIRS= flash  gpio spi i2c pwm
 
 # victor modified, change for stoping the process when error occurring
 .PHONY:	all	clean $(DIRS)

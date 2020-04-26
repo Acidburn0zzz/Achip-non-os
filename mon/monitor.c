@@ -22,7 +22,9 @@ Date                Author              Modification
 #include "monitor.h"
 #include <stdarg.h>
 #include <string.h>
-
+#ifdef PWM_TEST
+#include "drivers/pwm.h"
+#endif
 /*---------------------------------------------------------------------------*
 *                            EXTERNAL   REFERENCES                                                                *
 *---------------------------------------------------------------------------*/
@@ -882,7 +884,20 @@ static void _disp(int argc, char *argv[])
 	//printf("disp function test \n");
 }
 #endif
+#ifdef PWM_TEST
+void pwm_test(int argc, char *argv[])
+{
+	pwm_pinmux_set(0,PWM_GPIO_PIN_OUT(1,2));
 
+	pwm_pinmux_set(1,PWM_GPIO_PIN_OUT(1,5));
+
+	pwm_set_by_period(0,50000000,25000000);
+	pwm_set_by_freq(1,1650,128); // freq = 1.65Khz,duty = 50%
+
+	pwm_enable(0);
+	pwm_enable(1);
+}
+#endif
 
 static CMD_LIST cmd_list[] =
 {
@@ -893,6 +908,9 @@ static CMD_LIST cmd_list[] =
 
 	{"cbdma", cbdma_test, "CBDMA test"	},
 	{"timer", timer_test, "Timer test"	},
+#ifdef PWM_TEST
+	{"pwm",   pwm_test, "pwm Start" },
+#endif
 #ifdef AXI_MON
 	{"axi", _axi, "AXI MON test"	},
 #endif

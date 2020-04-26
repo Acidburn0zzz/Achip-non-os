@@ -29,7 +29,7 @@ CSOURCES = main.c
 
 # common
 
-CSOURCES += $(COMMON_DIR)/diag.c $(COMMON_DIR)/common.c $(COMMON_DIR)/sio.c $(COMMON_DIR)/cpu_util.c $(wildcard ./testapi/util/*.c)
+CSOURCES += $(COMMON_DIR)/diag.c $(COMMON_DIR)/common.c $(COMMON_DIR)/sio.c $(COMMON_DIR)/stc.c $(COMMON_DIR)/cpu_util.c $(wildcard ./testapi/util/*.c)
 CSOURCES += $(COMMON_DIR)/eabi_compat.c
 #CSOURCES += $(COMMON_DIR)/uart_printf.c
 
@@ -102,6 +102,14 @@ ifeq "$(RS485_TEST)" "ENABLE"
 	# rs485 test
 	RS485_PATH = drivers/rs485
 	CSOURCES += $(wildcard $(RS485_PATH)/*.c)
+endif
+
+PWM_TEST = ENABLE
+ifeq "$(PWM_TEST)" "ENABLE"
+	CFLAGS += -DPWM_TEST
+	# pwm test
+	PWM_PATH = drivers/pwm
+	CSOURCES += $(wildcard $(PWM_PATH)/*.c)
 endif
 
 OBJS = $(ASOURCES:.S=.o) $(CSOURCES:.c=.o)
