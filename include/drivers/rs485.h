@@ -16,13 +16,15 @@
 #define BAUDRATE            115200
 
 // UART2
-#define UA2_REG            UART2_REG
-#define UART2_tx_rdy()       (UA2_REG->lsr & UART_LSR_TX_RDY)
-#define UART2_rx_rdy()       (UA2_REG->lsr & UART_LSR_RX_RDY)
-#define UART2_tx_empty()     (UA2_REG->lsr & UART_TX_EMPTY)
-#define UART2_putc_nw(c)     (UA2_REG->dr = (c))
-#define UART2_getc()         (UA2_REG->dr)
-	
+#define UA2_REG					UART2_REG
+#define UART2_tx_rdy()			(UA2_REG->lsr & UART_LSR_TX_RDY)
+#define UART2_rx_rdy()			(UA2_REG->lsr & UART_LSR_RX_RDY)
+#define UART2_tx_empty()		(UA2_REG->lsr & UART_TX_EMPTY)
+#define UART2_putc_nw(c)		(UA2_REG->dr = (c))
+#define UART2_getc()			(UA2_REG->dr)
+#define UART2_rts_inactive()	(UA2_REG->mcr &= (~UART_RTS_B))			
+#define UART2_rts_active()		(UA2_REG->mcr |= UART_RTS_B)		
+
 #define UART2_wait()         do { while (!UART2_tx_rdy()) ;} while (0)
 #define UART2_flush()        do { while (!UART2_tx_empty()) ;} while (0)
 #define UART2_putc(c)        do { UART2_wait(); UART2_putc_nw(c); } while (0)
@@ -45,7 +47,7 @@
 #define DE_RE_High(gpio)    (GP6_REG->sft_cfg[16] = (((0x00010000)<<(gpio)) | ((1)<<(gpio))))		
 
 
-extern void rs485_init(int TX_pin, int RX_pin);
+extern void rs485_init(int TX_pin, int RX_pin, int RTS_pin);
 extern void _RS485_write(int argc, char *argv[]);
 extern void _RS485_read(int argc, char *argv[]);
 #endif 

@@ -125,7 +125,8 @@ int main(void)
 #endif
 
 #ifdef RS485_TEST
-	rs485_init(10,11);	//G_MX[10]_TX --> DI, G_MX[11]_RX --> RO 
+	AV1_STC_init();
+	rs485_init(10,11,12);	//G_MX[10]_TX --> DI, G_MX[11]_RX --> RO ,G_MX[12]_RTS
 #endif 
 
 #ifdef SPI_TEST

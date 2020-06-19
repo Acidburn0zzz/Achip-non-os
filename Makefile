@@ -117,7 +117,7 @@ OBJS = $(ASOURCES:.S=.o) $(CSOURCES:.c=.o)
 
 .PHONY: clean all
 
-all: clean $(TARGET) ISP
+all: clean $(TARGET) ISP pack 
 	dd if=prebuilt/xboot_nor.img of=bin/spi_all.bin bs=1k seek=64
 	dd if=bin/rom.img of=bin/spi_all.bin bs=1k seek=256
 	dd if=bin/rom.img of=bin/out.bin 
@@ -128,6 +128,12 @@ $(TARGET): $(OBJS)
 	$(CROSS)ld $(OBJS) -o $(BIN)/$@ -Map $(BIN)/$@.map $(LDFLAGS) $(LDFLAGS_COM)
 	$(CROSS)objcopy -O binary -S $(BIN)/$@ $(BIN)/$@.bin
 	$(CROSS)objdump -d -S $(BIN)/$@ > $(BIN)/$@.dis
+
+pack:
+	@# Add image header
+	@echo "Wrap code image..."
+	@bash ./script/add_uhdr.sh uboot $(BIN)/$(TARGET).bin $(BIN)/$(TARGET).img 0x200040 0x200040
+	@sz=`du -sb bin/$(TARGET).img|cut -f1`;	printf "rom size = %d (hex %x)\n" $$sz $$sz
 
 ISP:
 	@echo "isp..."
